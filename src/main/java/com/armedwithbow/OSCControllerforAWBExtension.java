@@ -103,17 +103,19 @@ class ExtensionBase {
    public final ControllerHost host;
    public final HardwareSurface extensionHardwareSurface;
    public final MidiIn port;
+   public final TrackBank bus_fader_bank;
 
-   ExtensionBase(ControllerHost host, HardwareSurface extensionHardwareSurface, MidiIn port)
+   ExtensionBase(ControllerHost host, int BUS_SENDS_END)
    {
       this.host = host;
-      this.extensionHardwareSurface = extensionHardwareSurface;
-      this.port = port;
+      this.extensionHardwareSurface = host.createHardwareSurface();
+      this.port = host.getMidiInPort (0);
+      this.bus_fader_bank = host.createEffectTrackBank (BUS_SENDS_END, 0);
    }
 }
 
 class InterfaceGroup {
-   public final ExtensionBase base;
+   // public final ExtensionBase base;
    public final String name;
    public final String type;
    public final int start_index;
@@ -122,9 +124,9 @@ class InterfaceGroup {
    public UIModule[] modules;
    // public final HardwareSurface extentionHardwareSurface;
 
-   InterfaceGroup(ExtensionBase base, String name, String type, int start_index, UIModule[] modules, Boolean isNested)
+   InterfaceGroup(String name, String type, int start_index, UIModule[] modules, Boolean isNested)
    {
-      this.base = base;
+      // this.base = base;
       this.name = name;
       this.start_index = start_index;
       this.type = type;
@@ -135,9 +137,9 @@ class InterfaceGroup {
    }
 
    // public void init(ControllerHost host, HardwareSurface extentionHardwareSurface, MidiIn port, int TOTAL_BUS_TRACKS, int TOTAL_FX_TRACKS, int BUS_SENDS_BASE, int BUS_SENDS_START, int FX_SENDS_BASE, int FX_SENDS_START, int BUS_FADERS_BASE)
-   public void init(int TOTAL_BUS_TRACKS, int TOTAL_FX_TRACKS, int BUS_SENDS_BASE, int BUS_SENDS_START, int FX_SENDS_BASE, int FX_SENDS_START)
+   public void init(final ExtensionBase base, int TOTAL_BUS_TRACKS, int TOTAL_FX_TRACKS, int BUS_SENDS_BASE, int BUS_SENDS_START, int FX_SENDS_BASE, int FX_SENDS_START)
    {
-      for(UIModule mod: modules) {
+      for(UIModule mod: this.modules) {
          base.host.println(mod.display());
         }
 
@@ -149,22 +151,23 @@ class InterfaceGroup {
          case "fx" : groupTrackBank = base.host.createEffectTrackBank(modules.length, 0);
             break;
          }
-      for(UIModule mod : modules) {
+      for(UIModule mod : this.modules) {
          if(mod.map_busses || mod.map_fx) {
             mod.track = groupTrackBank.getItemAt(mod.index);
             mod.sends = mod.track.sendBank();
-            this.base.host.println("track sends: " + String.valueOf(mod.sends.getSizeOfBank()));
+            base.host.println("track sends: " + String.valueOf(mod.sends.getSizeOfBank()));
          }
 
          // map bus sends
          if(mod.map_busses) {
+
             mod.bus_knobs = new AbsoluteHardwareKnob[TOTAL_BUS_TRACKS];
             // mod.bus_IntHarwareProperty = new IntegerHardwareProperty[TOTAL_BUS_TRACKS];
             for (int k = 0; k < TOTAL_BUS_TRACKS; k++) {
                
-                  mod.bus_knobs[k] = this.base.extensionHardwareSurface.createAbsoluteHardwareKnob("ABS_KNOB_"+mod.name.toUpperCase()+"_BUS_"+k);
+                  mod.bus_knobs[k] = base.extensionHardwareSurface.createAbsoluteHardwareKnob("ABS_KNOB_"+mod.name.toUpperCase()+"_BUS_"+k);
                   // mod.bus_knobs[k] = this.hardwareSurface.crea ("ABS_KNOB_"+mod.name.toUpperCase()+"_BUS_"+k);
-                  mod.bus_knobs[k].setAdjustValueMatcher (this.base.port.createAbsoluteCCValueMatcher (mod.midi_channel, BUS_SENDS_BASE + k));
+                  mod.bus_knobs[k].setAdjustValueMatcher (base.port.createAbsoluteCCValueMatcher (mod.midi_channel, BUS_SENDS_BASE + k));
                   mod.bus_knobs[k].setBinding (mod.sends.getItemAt (k+ BUS_SENDS_START).value());
                   // host.println("subscribed send: " + mod.sends.getItemAt (k+ BUS_SENDS_START).addValueObserver(arg0));
                   // mod.sends.getItemAt (k+ BUS_SENDS_START).addValueObserver( 127, lambda);
@@ -182,8 +185,8 @@ class InterfaceGroup {
             mod.fx_knobs = new AbsoluteHardwareKnob[TOTAL_FX_TRACKS];
             for (int k = 0; k < TOTAL_FX_TRACKS; k++) {
 
-                  mod.fx_knobs[k] = this.base.extensionHardwareSurface.createAbsoluteHardwareKnob("ABS_KNOB_"+mod.name.toUpperCase()+"_FX_"+k);
-                  mod.fx_knobs[k].setAdjustValueMatcher (this.base.port.createAbsoluteCCValueMatcher (mod.midi_channel, FX_SENDS_BASE + k));
+                  mod.fx_knobs[k] = base.extensionHardwareSurface.createAbsoluteHardwareKnob("ABS_KNOB_"+mod.name.toUpperCase()+"_FX_"+k);
+                  mod.fx_knobs[k].setAdjustValueMatcher (base.port.createAbsoluteCCValueMatcher (mod.midi_channel, FX_SENDS_BASE + k));
                   mod.fx_knobs[k].setBinding (mod.sends.getItemAt (k + FX_SENDS_START).value());
                   // setValueSupplier()
                   // mod.sends.getItemAt (k+ BUS_SENDS_START).markInterested();
@@ -199,17 +202,19 @@ class InterfaceGroup {
    }
 
    // setup sliders for bus tracks associated with the group
-   public int setupSliders(HardwareSlider[] sliders, int slider_i, int BUS_FADERS_BASE, TrackBank bus_faders_bank)
+   public int setupSliders(final ExtensionBase base, HardwareSlider[] sliders, int slider_i, int BUS_FADERS_BASE)
    {
       for(UIModule mod : modules) {
          if(mod.map_fader){
+            sliders[slider_i] = base.extensionHardwareSurface.createHardwareSlider (mod.name.toUpperCase()+"_FADER");
+            sliders[slider_i].setAdjustValueMatcher (base.port.createAbsoluteCCValueMatcher (mod.midi_channel, 9));
             sliders[slider_i].setBinding (groupTrackBank.getItemAt (mod.index).volume ());
             slider_i++;
          }
          for (int j = 0; j < mod.busses.length; j++) {
-            sliders[slider_i] = this.base.extensionHardwareSurface.createHardwareSlider ("SLIDER_"+mod.name.toUpperCase()+"_"+j);
-            sliders[slider_i].setAdjustValueMatcher (this.base.port.createAbsoluteCCValueMatcher (mod.midi_channel, BUS_FADERS_BASE + j));
-            sliders[slider_i].setBinding (bus_faders_bank.getItemAt (mod.busses[j]).volume ());
+            sliders[slider_i] = base.extensionHardwareSurface.createHardwareSlider ("SLIDER_"+mod.name.toUpperCase()+"_"+j);
+            sliders[slider_i].setAdjustValueMatcher (base.port.createAbsoluteCCValueMatcher (mod.midi_channel, BUS_FADERS_BASE + j));
+            sliders[slider_i].setBinding (base.bus_fader_bank.getItemAt (mod.busses[j]).volume ());
             // fxBank.itemCount ().markInterested ();
             // Track fx = fxBank.getItemAt (mod.busses[j]);
             // fx.position().markInterested();
@@ -262,9 +267,9 @@ class InterfaceGroup {
 
 // }
 
-interface MyFunctionalInterface {
-   public void execute();
-}
+// interface MyFunctionalInterface {
+//    public void execute();
+// }
 
 
 public class OSCControllerforAWBExtension extends ControllerExtension
@@ -292,9 +297,9 @@ public class OSCControllerforAWBExtension extends ControllerExtension
    private final int FX_SENDS_START = BUS_SENDS_END + 1;    
    private final int FX_SENDS_END = BUS_SENDS_END + TOTAL_FX_TRACKS;    
 
-   private final int INS_MASTER = INS_TRACKBANK_START;      
-   private final int VC_MASTER = INS_MASTER + 1;      
-   private final int P2_MASTER = INS_MASTER + 2;      
+   // private final int INS_MASTER = INS_TRACKBANK_START;      
+   // private final int VC_MASTER = INS_MASTER + 1;      
+   // private final int P2_MASTER = INS_MASTER + 2;      
 
    private HardwareSurface hardwareSurface;
 
@@ -306,6 +311,8 @@ public class OSCControllerforAWBExtension extends ControllerExtension
    @Override
    public void init()
    {
+
+      final ExtensionBase base = new ExtensionBase( getHost(), BUS_SENDS_END);
       final ControllerHost host = getHost();    
       
       ///////////////////////////////////
@@ -425,18 +432,18 @@ public class OSCControllerforAWBExtension extends ControllerExtension
       final int BUS_FADERS_BASE = 90;
       
       
-      this.hardwareSurface = host.createHardwareSurface ();
+      // this.hardwareSurface = host.createHardwareSurface ();
       
-      final MidiIn port = host.getMidiInPort (0);
+      
 
-      ExtensionBase base = new ExtensionBase( host, this.hardwareSurface, port);
       
-      InterfaceGroup audio_in = new InterfaceGroup(base, "audio source lines", "track", 1, audio_modules, true);
+      
+      InterfaceGroup audio_in = new InterfaceGroup( "audio source lines", "track", 1, audio_modules, true);
       // InterfaceGroup p2_in = new InterfaceGroup(base, "in lines", "track", 5, p2_modules, false);
-      InterfaceGroup fx_1 = new InterfaceGroup(base, "fx 1", "fx", 0, fx_1_modules, false);
+      InterfaceGroup fx_1 = new InterfaceGroup( "fx 1", "fx", 0, fx_1_modules, false);
 
       
-      final TrackBank bus_fader_bank = host.createEffectTrackBank (BUS_SENDS_END, 0);
+      
       // InterfaceGroup fx_2 = new InterfaceGroup(base, "fx 2", "fx", fx_2_modules, false);
       /////////////////////////////////////////////////////////////////////////////////////
       // 1. Create the controls
@@ -446,45 +453,16 @@ public class OSCControllerforAWBExtension extends ControllerExtension
       sliders = new HardwareSlider[TOTAL_SLIDERS];
       int sliders_i = 0;
       
-      audio_in.init(TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START);
+      audio_in.init(base, TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START);
       // p2_in.init(TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START);
-      fx_1.init(TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START);
+      fx_1.init(base, TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START);
 
-      sliders_i = audio_in.setupSliders(sliders, sliders_i, BUS_FADERS_BASE, bus_fader_bank);
-      sliders_i = fx_1.setupSliders(sliders, sliders_i, BUS_FADERS_BASE, bus_fader_bank);
+      sliders_i = audio_in.setupSliders(base, sliders, sliders_i, BUS_FADERS_BASE);
+      sliders_i = fx_1.setupSliders(base, sliders, sliders_i, BUS_FADERS_BASE);
       
       // HardwareButton
       final HardwareButton playButton = this.hardwareSurface.createHardwareButton ("PLAY_BUTTON");
-      // HardwareSlider
-      // final HardwareSlider slider_vc = this.hardwareSurface.createHardwareSlider ("SLIDER_VC");
-      // final HardwareSlider slider_p2 = this.hardwareSurface.createHardwareSlider ("SLIDER_P2");
-      // final HardwareSlider slider_splut = this.hardwareSurface.createHardwareSlider ("SLIDER_SPLUT");
-      //final HardwareSlider slider_delIn_1 = this.hardwareSurface.createHardwareSlider ("SLIDER_DIN_2");
-      //final HardwareSlider slider_delIn_2 = this.hardwareSurface.createHardwareSlider ("SLIDER_DIN_1");
-      
-      // final HardwareSlider slider_b1 = this.hardwareSurface.createHardwareSlider ("SLIDER_B2");
-      // final HardwareSlider slider_b2 = this.hardwareSurface.createHardwareSlider ("SLIDER_B2");
-      // final HardwareSlider slider_a1 = this.hardwareSurface.createHardwareSlider ("SLIDER_A1");
-      // final HardwareSlider slider_a2 = this.hardwareSurface.createHardwareSlider ("SLIDER_A2");
-      
-      // final HardwareSlider slider_mast = this.hardwareSurface.createHardwareSlider ("SLIDER_B_MAST");
-      // final HardwareSlider slider_c1 = this.hardwareSurface.createHardwareSlider ("SLIDER_B_C1"); // vc
-      // final HardwareSlider slider_c2 = this.hardwareSurface.createHardwareSlider ("SLIDER_B_C2");
-      // final HardwareSlider slider_c3 = this.hardwareSurface.createHardwareSlider ("SLIDER_B_C3");
-      // final HardwareSlider slider_c4 = this.hardwareSurface.createHardwareSlider ("SLIDER_B_C4");
-      // final HardwareSlider slider_b_delb1 = this.hardwareSurface.createHardwareSlider ("SLIDER_B_DEL_B1"); // delBus
-      // final HardwareSlider slider_b_delb2 = this.hardwareSurface.createHardwareSlider ("SLIDER_B_DEL_B2");
-      // final HardwareSlider slider_b_dela1 = this.hardwareSurface.createHardwareSlider ("SLIDER_B_DEL_A1");
-      // final HardwareSlider slider_b_dela2 = this.hardwareSurface.createHardwareSlider ("SLIDER_B_DEL_A2");
-      // final HardwareSlider slider_b_um = this.hardwareSurface.createHardwareSlider ("SLIDER_B_UM");
-      // final HardwareSlider slider_b_stut_1 = this.hardwareSurface.createHardwareSlider ("SLIDER_B_STUT_1");
-      // final HardwareSlider slider_b_stut_2 = this.hardwareSurface.createHardwareSlider ("SLIDER_B_STUT_2");
-      // final HardwareSlider slider_b_sparkle = this.hardwareSurface.createHardwareSlider ("SLIDER_B_SPARK");
-      // final HardwareSlider slider_b_splut = this.hardwareSurface.createHardwareSlider ("SLIDER_B_SPLUT");
-      // final HardwareSlider slider_b_fuzz = this.hardwareSurface.createHardwareSlider ("SLIDER_B_FUZZ");
-      // final HardwareSlider slider_verb = this.hardwareSurface.createHardwareSlider ("SLIDER_B_VERB");
-      // final HardwareSlider slider_b_p2 = this.hardwareSurface.createHardwareSlider ("SLIDER_B_P2");
-      
+
 
 
       // AbsoluteHardwareKnob
@@ -494,8 +472,8 @@ public class OSCControllerforAWBExtension extends ControllerExtension
       // 2. Bind the controls to MIDI commands
 
       
-      playButton.pressedAction ().setActionMatcher (port.createCCActionMatcher (this.channel, this.buttonControl, 127));
-      playButton.releasedAction ().setActionMatcher (port.createCCActionMatcher (this.channel, this.buttonControl, 0));
+      // playButton.pressedAction ().setActionMatcher (port.createCCActionMatcher (this.channel, this.buttonControl, 127));
+      // playButton.releasedAction ().setActionMatcher (port.createCCActionMatcher (this.channel, this.buttonControl, 0));
 
       
       // absKnob.setAdjustValueMatcher (port.createAbsoluteCCValueMatcher (this.channel, this.absKnobControl));
@@ -503,8 +481,8 @@ public class OSCControllerforAWBExtension extends ControllerExtension
       /////////////////////////////////////////////////////////////////////////////////////
       // 3. Bind the controls to actions / targets
 
-      final Transport transport = host.createTransport ();
-      playButton.pressedAction ().setBinding (transport.playAction ());
+      // final Transport transport = host.createTransport ();
+      // playButton.pressedAction ().setBinding (transport.playAction ());
 
       // final TrackBank ins_trackBank = host.createTrackBank (INS_TRACKBANK_SIZE + DEL_TRACKBANK_SIZE, TOTAL_BUS_TRACKS + TOTAL_FX_TRACKS, 0);
       // final TrackBank del_trackBank = host.createTrackBank (DEL_TRACKBANK_SIZE, TOTAL_BUS_TRACKS + TOTAL_FX_TRACKS, 0);
@@ -512,68 +490,12 @@ public class OSCControllerforAWBExtension extends ControllerExtension
 
       // public class 
 
-      final MidiOut midiOutPort = host.getMidiOutPort (0);
+      // final MidiOut midiOutPort = host.getMidiOutPort (0);
       
    //    MyFunctionalInterface lambda = (int i) -> {
    //       System.out.println("Executing...");
    //   }
       
-   //    int i = 0;
-   //    for(UIModule mod : in_modules) {
-   //       if(mod.map_busses || mod.map_fx) {
-   //          mod.track = ins_trackBank.getItemAt(mod.index);
-   //          mod.sends = mod.track.sendBank();
-   //          host.println("track sends: " + String.valueOf(mod.sends.getSizeOfBank()));
-   //       }
-   //       if(mod.map_busses) {
-   //          mod.bus_knobs = new AbsoluteHardwareKnob[TOTAL_BUS_TRACKS];
-   //          // mod.bus_IntHarwareProperty = new IntegerHardwareProperty[TOTAL_BUS_TRACKS];
-   //          for (int k = 0; k < TOTAL_BUS_TRACKS; k++) {
-               
-   //                mod.bus_knobs[k] = this.hardwareSurface.createAbsoluteHardwareKnob("ABS_KNOB_"+mod.name.toUpperCase()+"_BUS_"+k);
-   //                // mod.bus_knobs[k] = this.hardwareSurface.crea ("ABS_KNOB_"+mod.name.toUpperCase()+"_BUS_"+k);
-   //                mod.bus_knobs[k].setAdjustValueMatcher (port.createAbsoluteCCValueMatcher (mod.midi_channel, BUS_SENDS_BASE + k));
-   //                mod.bus_knobs[k].setBinding (mod.sends.getItemAt (k+ BUS_SENDS_START).value());
-   //                // host.println("subscribed send: " + mod.sends.getItemAt (k+ BUS_SENDS_START).addValueObserver(arg0));
-   //                // mod.sends.getItemAt (k+ BUS_SENDS_START).addValueObserver( 127, lambda);
-   //                // mod.sends.getItemAt (k+ BUS_SENDS_START).addValueObserver( 127, midiOutPort.sendMidi(1, 1, 5)); 
-   //                // setValueSupplier
-   //                if(mod.sends.getSizeOfBank() < k + BUS_SENDS_START) {
-   //                   break;
-   //                }
-   //                // mod.bus_knobs[k]
-   //          }
-   //       }
-   //       if(mod.map_fx) {
-   //          mod.fx_knobs = new AbsoluteHardwareKnob[TOTAL_FX_TRACKS];
-   //          for (int k = 0; k < TOTAL_FX_TRACKS; k++) {
-
-   //                mod.fx_knobs[k] = this.hardwareSurface.createAbsoluteHardwareKnob("ABS_KNOB_"+mod.name.toUpperCase()+"_FX_"+k);
-   //                mod.fx_knobs[k].setAdjustValueMatcher (port.createAbsoluteCCValueMatcher (mod.midi_channel, FX_SENDS_BASE + k));
-   //                mod.fx_knobs[k].setBinding (mod.sends.getItemAt (k + FX_SENDS_START).value());
-   //                // setValueSupplier()
-   //                // mod.sends.getItemAt (k+ BUS_SENDS_START).markInterested();
-   //                // host.println("subscribed send: " + 
-   //                if(mod.sends.getSizeOfBank() < k + FX_SENDS_START) {
-   //                   break;
-   //                }
-   //             }
-   //       }
-         
-   //       // DO MOD BUSSES
-   //       for (int j = 0; j < mod.busses.length; j++) {
-   //          sliders[i] = this.hardwareSurface.createHardwareSlider ("SLIDER_"+mod.name.toUpperCase()+"_"+j);
-   //          sliders[i].setAdjustValueMatcher (port.createAbsoluteCCValueMatcher (mod.midi_channel, BUS_FADERS_BASE + j));
-   //          sliders[i].setBinding (fxBank.getItemAt (mod.busses[j]).volume ());
-   //          // fxBank.itemCount ().markInterested ();
-   //          // Track fx = fxBank.getItemAt (mod.busses[j]);
-   //          // fx.position().markInterested();
-            
-            
-   //          i++;
-   //       }
-   //   }
-
      
    //   for (int t = 0; t < fxBank.getSizeOfBank(); t++) {
    //    Track fx = fxBank.getItemAt (t);
@@ -646,7 +568,8 @@ public class OSCControllerforAWBExtension extends ControllerExtension
 
       // TODO: Perform your driver initialization here.
       // For now just show a popup notification for verification that it is running.
-      host.showPopupNotification("OSC Controller for AWB Initialized");
+      base.host.showPopupNotification("OSC Controller for AWB Initialized");
+      host.showPopupNotification("righhhhhht" );
    }
 
    @Override
@@ -660,6 +583,8 @@ public class OSCControllerforAWBExtension extends ControllerExtension
    @Override
    public void flush()
    {
+      // if (this.hardwareSurface != null)
+      //       this.hardwareSurface.updateHardware ();
       if (this.hardwareSurface != null)
             this.hardwareSurface.updateHardware ();
    }
