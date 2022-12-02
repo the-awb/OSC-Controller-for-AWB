@@ -118,16 +118,18 @@ class InterfaceGroup {
    // public final ExtensionBase base;
    public final String name;
    public final String type;
+   public final int group_size;
    public final int start_index;
    public final Boolean isNested;
    public TrackBank groupTrackBank;
    public UIModule[] modules;
    // public final HardwareSurface extentionHardwareSurface;
 
-   InterfaceGroup(String name, String type, int start_index, UIModule[] modules, Boolean isNested)
+   InterfaceGroup(String name, String type, int group_size, int start_index, UIModule[] modules, Boolean isNested)
    {
       // this.base = base;
       this.name = name;
+      this.group_size = group_size;
       this.start_index = start_index;
       this.type = type;
       this.modules = modules;
@@ -144,11 +146,11 @@ class InterfaceGroup {
         }
 
       switch(type){
-         case "track" : groupTrackBank = base.host.createMainTrackBank(modules.length, TOTAL_BUS_TRACKS + TOTAL_FX_TRACKS, 0);
+         case "track" : groupTrackBank = base.host.createMainTrackBank(this.group_size, TOTAL_BUS_TRACKS + TOTAL_FX_TRACKS, 0);
             break;
-         case "mixed" : groupTrackBank = base.host.createTrackBank(modules.length, TOTAL_BUS_TRACKS + TOTAL_FX_TRACKS, 0, isNested);
+         case "mixed" : groupTrackBank = base.host.createTrackBank(this.group_size, TOTAL_BUS_TRACKS + TOTAL_FX_TRACKS, 0, isNested);
             break;
-         case "fx" : groupTrackBank = base.host.createEffectTrackBank(modules.length, 0);
+         case "fx" : groupTrackBank = base.host.createEffectTrackBank(TOTAL_BUS_TRACKS + TOTAL_FX_TRACKS, 0);
             break;
          }
       for(UIModule mod : this.modules) {
@@ -196,9 +198,9 @@ class InterfaceGroup {
                   }
                }
          }
-         
      }
-     return;
+     
+   //   return;
    }
 
    // setup sliders for bus tracks associated with the group
@@ -288,7 +290,7 @@ public class OSCControllerforAWBExtension extends ControllerExtension
    private final int TOTAL_FX_TRACKS = 10;    // FX tracks
    private final int TOTAL_SLIDERS = 19;     // sliders defined in o-s-c... should really map to bus tracks somehow
    
-   private final int INS_TRACKBANK_START = 0;    
+   private final int INS_TRACKBANK_START = 1;    
    private final int INS_TRACKBANK_SIZE = 6;    
    private final int DEL_TRACKBANK_START = INS_TRACKBANK_START + INS_TRACKBANK_SIZE - 1;    
    private final int DEL_TRACKBANK_SIZE = 6;    
@@ -313,8 +315,13 @@ public class OSCControllerforAWBExtension extends ControllerExtension
    {
 
       final ExtensionBase base = new ExtensionBase( getHost(), BUS_SENDS_END);
-      final ControllerHost host = getHost();    
+
+      this.hardwareSurface = base.extensionHardwareSurface;
+      // final ControllerHost host = getHost();    
       
+      // this.hardwareSurface = host.createHardwareSurface();
+      // final MidiIn port = host.getMidiInPort (0);
+      // final TrackBank bus_fader_bank = host.createEffectTrackBank (BUS_SENDS_END, 0);
       ///////////////////////////////////
       // 0. Create the constants
       /////////////////////////////////
@@ -370,57 +377,37 @@ public class OSCControllerforAWBExtension extends ControllerExtension
       // fx_2_modules = new UIModule[FX_GROUP_2_MODULES];
 
       // index is track, busindex is effectTrack
-      UIModule vc_mast_mod = new UIModule( 1, "vc mast", 0, new int[]{}, false, true, 0, 7, 0, false); //vc + ubermod
-      UIModule vc_in_mod = new UIModule( 2, "vc in", 0, new int[]{0, 1, 2, 3, 8, 10}, true, false, 0, 7, 0, false); //vc + ubermod
-      UIModule p2_mast_mod = new UIModule(4, "pro2", 6, new int[]{16}, true, true, 0, 0, 0, false); //p2
+      final UIModule vc_mast_mod = new UIModule( 1, "vc mast", 1, new int[]{}, false, true, 0, 7, 0, false); //vc + ubermod
+      final UIModule vc_in_mod = new UIModule( 2, "vc in", 0, new int[]{0, 1, 2, 3, 8, 10}, true, false, 0, 7, 0, false); //vc + ubermod
+      final UIModule p2_mast_mod = new UIModule(4, "pro2", 7, new int[]{16}, true, true, 0, 0, 0, false); //p2
       
-      UIModule del_bus_mod = new UIModule( 6, "del bus", 0, new int[]{}, true, false, 0, 7, 0, true); //vc + ubermod
       
       // modules[1] = new UIModule(false, , "pro2", 6, new int[]{16}, true, 0, 0, 0); //p2
       // modules[2] = new UIModule(1, "del_b1", 2, new int[]{4}, true, true, 6, 0, 0); 
       // modules[3] = new UIModule(2, "del_a1", 3, new int[]{6}, true, true, 6, 1, 0); 
       // modules[4] = new UIModule(3, "del_a2", 4, new int[]{5}, true, true, 6, 0, 0); 
       // modules[5] = new UIModule(4, "del_b2", 5, new int[]{7}, true, true, 6, 0, 0); 
-      UIModule splut_mod = new UIModule(TOTAL_BUS_TRACKS, "splut", 7, new int[]{9}, true, true ,0, 0, 0, false); // TODO - param banks
-      UIModule b1_mod = new UIModule(TOTAL_BUS_TRACKS + 1, "del_b1", 2, new int[]{4}, true, true, 6, 0, 0, false); 
-      UIModule a1_mod = new UIModule(TOTAL_BUS_TRACKS + 2, "del_a1", 3, new int[]{6}, true, true, 6, 1, 0, false); 
-      UIModule a2_mod = new UIModule(TOTAL_BUS_TRACKS + 3, "del_a2", 4, new int[]{5}, true, true, 6, 0, 0,false); 
-      UIModule b2_mod = new UIModule(TOTAL_BUS_TRACKS + 4, "del_b2", 5, new int[]{7}, true, true, 6, 0, 0, false); 
+      final UIModule del_bus_mod = new UIModule( 7, "del bus", 6, new int[]{}, true, true, 0, 7, 0, true); //vc + ubermod
+      final UIModule b1_mod = new UIModule(8, "del_b1", 2, new int[]{4}, true, true, 6, 0, 0, false); 
+      final UIModule a1_mod = new UIModule(9, "del_a1", 3, new int[]{5}, true, true, 6, 1, 0, false); 
+      final UIModule a2_mod = new UIModule(10, "del_a2", 4, new int[]{6}, true, true, 6, 0, 0,false); 
+      final UIModule b2_mod = new UIModule(11, "del_b2", 5, new int[]{7}, true, true, 6, 0, 0, false); 
       
-      UIModule sparkle_mod = new UIModule(TOTAL_BUS_TRACKS + 5, "sparkle", 13, new int[]{11}, false, false, 5, 0, 0, false); 
-      UIModule deci_mod = new UIModule(TOTAL_BUS_TRACKS + 6, "deci", 11, new int[]{12}, false, false, 5, 0, 0, false); 
-      UIModule fuzz_mod = new UIModule(TOTAL_BUS_TRACKS + 7, "fuzz", 12, new int[]{13}, false, false, 1, 0, 0, false); 
-      UIModule verb_mod = new UIModule(TOTAL_BUS_TRACKS + 8, "verb_mast", 14, new int[]{15, 14},false, false, 2, 2, 0, false); 
+      final UIModule splut_mod = new UIModule(TOTAL_BUS_TRACKS, "splut", 8, new int[]{9}, false, false ,0, 0, 0, false); // TODO - param banks
+      final UIModule sparkle_mod = new UIModule(TOTAL_BUS_TRACKS + 1, "sparkle", 10, new int[]{11}, false, false, 5, 0, 0, false); 
+      final UIModule deci_mod = new UIModule(TOTAL_BUS_TRACKS + 2, "deci", 11, new int[]{12}, false, false, 5, 0, 0, false); 
+      final UIModule fuzz_mod = new UIModule(TOTAL_BUS_TRACKS + 3, "fuzz", 12, new int[]{13}, false, false, 1, 0, 0, false); 
+      final UIModule verb_mod = new UIModule(TOTAL_BUS_TRACKS + 4, "verb_mast", 13, new int[]{15, 14},false, false, 2, 2, 0, false); 
       
       // UIModule mast_mod = new UIModule(true, 27, "mast", 14, new int[]{15}, true, 2, 0, 0, false); 
 
-      UIModule[] audio_modules = new UIModule[]{vc_mast_mod, vc_in_mod, p2_mast_mod, del_bus_mod};
-      // UIModule[] p2_modules = {p2_mast_mod};
-      UIModule[] fx_1_modules = new UIModule[]{splut_mod, b1_mod, a1_mod, a2_mod, b2_mod, sparkle_mod, deci_mod, fuzz_mod, verb_mod};
+      final UIModule[] audio_modules = new UIModule[]{vc_mast_mod, vc_in_mod, p2_mast_mod, del_bus_mod, b1_mod, a1_mod, a2_mod, b2_mod};
+      // final UIModule[] delay_modules = new UIModule[]{del_bus_mod, b1_mod, a1_mod, a2_mod, b2_mod};
+      final UIModule[] fx_1_modules = new UIModule[]{splut_mod, sparkle_mod, deci_mod, fuzz_mod, verb_mod};
       // UIModule[] fx_2_modules = {sparkle_mod, deci_mod, a1_mod, a2_mod, b2_mod};
 
       
-      // UIModule[] fx_2_modules = {ins_mast_mod, vc_mast_mod, p2_mast_mod};
 
-      
-      // final HashMap<String, Integer> channels = new HashMap<String, Integer>();
-
-      // channels.put("in_1", 1);
-      // channels.put("in_2", 2);
-      // channels.put("in_3", 7); //p2
-      // channels.put("in_4", 8);
-      // channels.put("in_5", 9);
-      // channels.put("in_6",10);
-      // channels.put("in_ensemble", 11);
-      // channels.put("bus_b1", 3);
-      // channels.put("bus_a1", 4);
-      // channels.put("bus_a2", 5);
-      // channels.put("bus_b2", 6);
-      // channels.put("bus_sparkle", 14);
-      // channels.put("bus_fuzz", 12);
-      // channels.put("bus_deci", 13);
-      // // channels.put("bus_verb", 6);
-      // channels.put("bus_mast", 15);
 
       final int TRACK_FADER_CC = 9;
       final int ROUTING_BASE = 10;
@@ -431,22 +418,20 @@ public class OSCControllerforAWBExtension extends ControllerExtension
       final int BUS_SENDS_BASE = 70;
       final int BUS_FADERS_BASE = 90;
       
-      
-      // this.hardwareSurface = host.createHardwareSurface ();
-      
-      
 
       
       
-      InterfaceGroup audio_in = new InterfaceGroup( "audio source lines", "track", 1, audio_modules, true);
+      InterfaceGroup audio_in = new InterfaceGroup( "audio source lines", "track", 12, 0, audio_modules, true);
+      // InterfaceGroup delays = new InterfaceGroup( "audio source lines", "track", 6, 6, delay_modules, true);
       // InterfaceGroup p2_in = new InterfaceGroup(base, "in lines", "track", 5, p2_modules, false);
-      InterfaceGroup fx_1 = new InterfaceGroup( "fx 1", "fx", 0, fx_1_modules, false);
+      InterfaceGroup fx_1 = new InterfaceGroup( "fx 1", "fx", TOTAL_BUS_TRACKS + TOTAL_FX_TRACKS, 0, fx_1_modules, false);
 
       
       
       // InterfaceGroup fx_2 = new InterfaceGroup(base, "fx 2", "fx", fx_2_modules, false);
       /////////////////////////////////////////////////////////////////////////////////////
       // 1. Create the controls
+
       
       // 1.1 Create input controls
       HardwareSlider[] sliders;
@@ -454,122 +439,23 @@ public class OSCControllerforAWBExtension extends ControllerExtension
       int sliders_i = 0;
       
       audio_in.init(base, TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START);
+      // delays.init(base, TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START);
       // p2_in.init(TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START);
       fx_1.init(base, TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START);
 
+      
       sliders_i = audio_in.setupSliders(base, sliders, sliders_i, BUS_FADERS_BASE);
+      // sliders_i = delays.setupSliders(base, sliders, sliders_i, BUS_FADERS_BASE);
       sliders_i = fx_1.setupSliders(base, sliders, sliders_i, BUS_FADERS_BASE);
       
+      // audio_in.groupTrackBank.scrollBy(audio_in.start_index);  //scrollBy(this.start_index);
+      // delays.groupTrackBank.scrollBy(delays.start_index);  //scrollBy(this.start_index);
       // HardwareButton
-      final HardwareButton playButton = this.hardwareSurface.createHardwareButton ("PLAY_BUTTON");
-
-
-
-      // AbsoluteHardwareKnob
-      // final AbsoluteHardwareKnob absKnob = this.hardwareSurface.createAbsoluteHardwareKnob ("ABSOLUTE_KNOB");
-
-       /////////////////////////////////////////////////////////////////////////////////////
-      // 2. Bind the controls to MIDI commands
-
-      
-      // playButton.pressedAction ().setActionMatcher (port.createCCActionMatcher (this.channel, this.buttonControl, 127));
-      // playButton.releasedAction ().setActionMatcher (port.createCCActionMatcher (this.channel, this.buttonControl, 0));
-
-      
-      // absKnob.setAdjustValueMatcher (port.createAbsoluteCCValueMatcher (this.channel, this.absKnobControl));
-
-      /////////////////////////////////////////////////////////////////////////////////////
-      // 3. Bind the controls to actions / targets
-
-      // final Transport transport = host.createTransport ();
-      // playButton.pressedAction ().setBinding (transport.playAction ());
-
-      // final TrackBank ins_trackBank = host.createTrackBank (INS_TRACKBANK_SIZE + DEL_TRACKBANK_SIZE, TOTAL_BUS_TRACKS + TOTAL_FX_TRACKS, 0);
-      // final TrackBank del_trackBank = host.createTrackBank (DEL_TRACKBANK_SIZE, TOTAL_BUS_TRACKS + TOTAL_FX_TRACKS, 0);
-      
-
-      // public class 
-
-      // final MidiOut midiOutPort = host.getMidiOutPort (0);
-      
-   //    MyFunctionalInterface lambda = (int i) -> {
-   //       System.out.println("Executing...");
-   //   }
-      
-     
-   //   for (int t = 0; t < fxBank.getSizeOfBank(); t++) {
-   //    Track fx = fxBank.getItemAt (t);
-   //    // fx.position().markInterested();
-   //    host.println("fx position: " + String.valueOf(fx.position ().getAsInt()));
-   //   }
-
-   //    ins_trackBank.scrollPosition ().markInterested ();
-   //    ins_trackBank.canScrollBackwards ().markInterested ();
-   //    ins_trackBank.canScrollForwards ().markInterested ();
-   //    ins_trackBank.itemCount ().markInterested ();
-   //    ins_trackBank.cursorIndex() .markInterested ();
-   //    ins_trackBank.canScrollForwards	()	.markInterested ();
-      
-   //    fxBank.scrollPosition ().markInterested ();
-   //    fxBank.canScrollBackwards ().markInterested ();
-   //    fxBank.canScrollForwards ().markInterested ();
-   //    fxBank.itemCount ().markInterested ();
-   //    fxBank.cursorIndex() .markInterested ();
-   //    fxBank.canScrollForwards	()	.markInterested ();
-
-      
-      // host.println(String.valueOf(ins_trackBank.getSizeOfBank()));
-
-      // host.println("cursor index: " + String.valueOf(fxBank.cursorIndex().getAsInt()));
-      // host.println("bank itemCount: " + String.valueOf(fxBank.itemCount().getAsInt()));
-      // host.println(fxBank.canScrollForwards().getAsBoolean() ? "can scroll" : "can't scroll");
-
-
-      // host.println(String.valueOf(ins_trackBank.getSizeOfBank()));
-
-      // host.println("cursor index: " + String.valueOf(ins_trackBank.cursorIndex().getAsInt()));
-      // host.println("bank itemCount: " + String.valueOf(ins_trackBank.itemCount().getAsInt()));
-      // host.println(ins_trackBank.canScrollForwards().getAsBoolean() ? "can scroll" : "can't scroll");
-      // for (int t = 0; t < ins_trackBank.getSizeOfBank(); t++) {
-      //    // Track track = ins_trackBank.getItemAt(t);
-      //    Track track = ins_trackBank.getItemAt(t);
-      //    host.println("track sends: " + String.valueOf(track.sendBank().getSizeOfBank()));
-      //    // track.isGroup().getAsBoolean()
-         
-         
-      //    track.isGroup().markInterested();
-      //    track.position().markInterested();
-      //    track.trackType().markInterested();
-         
-      //    host.println("track type: " + track.trackType().get());
-      //    host.println("position: " + String.valueOf(track.position ().getAsInt()));
-         
-      //    // String result = track.isGroup().getAsBoolean() ? "group" : "not group";
-      //    host.println(track.isGroup().getAsBoolean() ? "group" : "not group");
-      //    // host.println(result);
-      // }
-      // slider_1.setBinding (trackBank.getItemAt (0).volume ());
-      // slider_2.setBinding (trackBank.getItemAt (1).volume ());
-      // absKnob.setBinding (trackBank.getItemAt (1).volume ());
-      // relKnob.setBinding (trackBank.getItemAt (2).volume ());
-
-      
-
-   /////////////////////////////////////////////////////////////////////////////////////
-      // 5. Layout the simulator UI
-
-      this.hardwareSurface.setPhysicalSize (200, 200);
-
-      playButton.setBounds (137.0, 133.5, 30.75, 11.5);
-      //this.hardwareSurface.hardwareElementWithId ("SLIDER_1").setBounds (106.0, 120.0, 10.0, 34.25);
-      //this.hardwareSurface.hardwareElementWithId ("SLIDER_2").setBounds (136.0, 120.0, 10.0, 34.25);
-      // this.hardwareSurface.hardwareElementWithId ("ABSOLUTE_KNOB").setBounds (127.25, 12.25, 10.0, 10.0);
-
-
+  
       // TODO: Perform your driver initialization here.
       // For now just show a popup notification for verification that it is running.
       base.host.showPopupNotification("OSC Controller for AWB Initialized");
-      host.showPopupNotification("righhhhhht" );
+
    }
 
    @Override
