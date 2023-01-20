@@ -28,7 +28,9 @@ import com.bitwig.extension.controller.api.BooleanValue;
 import com.bitwig.extension.controller.api.StringValue;
 import com.bitwig.extension.controller.api.IntegerValue;
 
-
+/*
+ *    TO RUN: mvn install
+ */
 
 // class UIMapper {
    
@@ -139,16 +141,18 @@ class InterfaceGroup {
    }
 
    // public void init(ControllerHost host, HardwareSurface extentionHardwareSurface, MidiIn port, int TOTAL_BUS_TRACKS, int TOTAL_FX_TRACKS, int BUS_SENDS_BASE, int BUS_SENDS_START, int FX_SENDS_BASE, int FX_SENDS_START, int BUS_FADERS_BASE)
-   public void init(final ExtensionBase base, int TOTAL_BUS_TRACKS, int TOTAL_FX_TRACKS, int BUS_SENDS_BASE, int BUS_SENDS_START, int FX_SENDS_BASE, int FX_SENDS_START)
+   
+   
+      public void init(final ExtensionBase base, int TOTAL_BUS_TRACKS, int TOTAL_FX_TRACKS, int BUS_SENDS_BASE, int BUS_SENDS_START, int FX_SENDS_BASE, int FX_SENDS_START, Boolean mapBusSends, Boolean mapFxSends)
    {
       for(UIModule mod: this.modules) {
          base.host.println(mod.display());
         }
-
+        
       switch(type){
-         case "track" : groupTrackBank = base.host.createMainTrackBank(this.group_size, TOTAL_BUS_TRACKS + TOTAL_FX_TRACKS, 0);
+         case "track" : groupTrackBank = base.host.createMainTrackBank(this.group_size, (mapBusSends ? TOTAL_BUS_TRACKS : 0) + (mapFxSends ? TOTAL_FX_TRACKS : 0), 0);
             break;
-         case "mixed" : groupTrackBank = base.host.createTrackBank(this.group_size, TOTAL_BUS_TRACKS + TOTAL_FX_TRACKS, 0, isNested);
+         case "mixed" : groupTrackBank = base.host.createTrackBank(this.group_size, (mapBusSends ? TOTAL_BUS_TRACKS : 0) + (mapFxSends ? TOTAL_FX_TRACKS : 0), 0, isNested);
             break;
          case "fx" : groupTrackBank = base.host.createEffectTrackBank(TOTAL_BUS_TRACKS + TOTAL_FX_TRACKS, 0);
             break;
@@ -164,17 +168,12 @@ class InterfaceGroup {
          if(mod.map_busses) {
 
             mod.bus_knobs = new AbsoluteHardwareKnob[TOTAL_BUS_TRACKS];
-            // mod.bus_IntHarwareProperty = new IntegerHardwareProperty[TOTAL_BUS_TRACKS];
             for (int k = 0; k < TOTAL_BUS_TRACKS; k++) {
                
                   mod.bus_knobs[k] = base.extensionHardwareSurface.createAbsoluteHardwareKnob("ABS_KNOB_"+mod.name.toUpperCase()+"_BUS_"+k);
-                  // mod.bus_knobs[k] = this.hardwareSurface.crea ("ABS_KNOB_"+mod.name.toUpperCase()+"_BUS_"+k);
                   mod.bus_knobs[k].setAdjustValueMatcher (base.port.createAbsoluteCCValueMatcher (mod.midi_channel, BUS_SENDS_BASE + k));
                   mod.bus_knobs[k].setBinding (mod.sends.getItemAt (k+ BUS_SENDS_START).value());
-                  // host.println("subscribed send: " + mod.sends.getItemAt (k+ BUS_SENDS_START).addValueObserver(arg0));
-                  // mod.sends.getItemAt (k+ BUS_SENDS_START).addValueObserver( 127, lambda);
-                  // mod.sends.getItemAt (k+ BUS_SENDS_START).addValueObserver( 127, midiOutPort.sendMidi(1, 1, 5)); 
-                  // setValueSupplier
+
                   if(mod.sends.getSizeOfBank() < k + BUS_SENDS_START) {
                      break;
                   }
@@ -190,9 +189,6 @@ class InterfaceGroup {
                   mod.fx_knobs[k] = base.extensionHardwareSurface.createAbsoluteHardwareKnob("ABS_KNOB_"+mod.name.toUpperCase()+"_FX_"+k);
                   mod.fx_knobs[k].setAdjustValueMatcher (base.port.createAbsoluteCCValueMatcher (mod.midi_channel, FX_SENDS_BASE + k));
                   mod.fx_knobs[k].setBinding (mod.sends.getItemAt (k + FX_SENDS_START).value());
-                  // setValueSupplier()
-                  // mod.sends.getItemAt (k+ BUS_SENDS_START).markInterested();
-                  // host.println("subscribed send: " + 
                   if(mod.sends.getSizeOfBank() < k + FX_SENDS_START) {
                      break;
                   }
@@ -276,17 +272,12 @@ class InterfaceGroup {
 
 public class OSCControllerforAWBExtension extends ControllerExtension
 {
-   private final int       channel        = 0;
-   private final int       buttonControl  = 112; // TODO -> EXCHANGE WITH YOUR CONTROL
-   // private final int       sliderControl_0  = 10;  // TODO -> EXCHANGE WITH YOUR CONTROL
-   // private final int       sliderControl_1  = 11;  // TODO -> EXCHANGE WITH YOUR CONTROL
-   // private final int       absKnobControl = 15;  // TODO -> EXCHANGE WITH YOUR CONTROL
-
    private final int TOTAL_MODULES = 12;      
    private final int IN_MODULES = 3;      
    private final int FX_GROUP_1_MODULES = 10;      
    private final int FX_GROUP_2_MODULES = 5;      
    private final int TOTAL_BUS_TRACKS = 18;  // tracks that are just BUS OUT
+   private final int TOP_LEVEL_GROUPS = 8;   // Top level Groups of tracks
    private final int TOTAL_FX_TRACKS = 10;    // FX tracks
    private final int TOTAL_SLIDERS = 19;     // sliders defined in o-s-c... should really map to bus tracks somehow
    
@@ -363,18 +354,6 @@ public class OSCControllerforAWBExtension extends ControllerExtension
       * 27 - mast // 15
       */
 
-      
-
-
-      // UIModule[] modules;
-      // UIModule[] in_modules;
-      // UIModule[] fx_1_modules;
-      // UIModule[] fx_2_modules;
-      
-      // modules = new UIModule[TOTAL_MODULES];
-      // in_modules = new UIModule[IN_MODULES];
-      // fx_1_modules = new UIModule[FX_GROUP_1_MODULES];
-      // fx_2_modules = new UIModule[FX_GROUP_2_MODULES];
 
       // index is track, busindex is effectTrack
       final UIModule vc_mast_mod = new UIModule( 1, "vc mast", 1, new int[]{}, false, true, 0, 7, 0, false); //vc + ubermod
@@ -382,11 +361,7 @@ public class OSCControllerforAWBExtension extends ControllerExtension
       final UIModule p2_mast_mod = new UIModule(4, "pro2", 7, new int[]{16}, true, true, 0, 0, 0, false); //p2
       
       
-      // modules[1] = new UIModule(false, , "pro2", 6, new int[]{16}, true, 0, 0, 0); //p2
-      // modules[2] = new UIModule(1, "del_b1", 2, new int[]{4}, true, true, 6, 0, 0); 
-      // modules[3] = new UIModule(2, "del_a1", 3, new int[]{6}, true, true, 6, 1, 0); 
-      // modules[4] = new UIModule(3, "del_a2", 4, new int[]{5}, true, true, 6, 0, 0); 
-      // modules[5] = new UIModule(4, "del_b2", 5, new int[]{7}, true, true, 6, 0, 0); 
+
       final UIModule del_bus_mod = new UIModule( 7, "del bus", 6, new int[]{}, true, true, 0, 7, 0, true); //vc + ubermod
       final UIModule b1_mod = new UIModule(8, "del_b1", 2, new int[]{4}, true, true, 6, 0, 0, false); 
       final UIModule a1_mod = new UIModule(9, "del_a1", 3, new int[]{5}, true, true, 6, 1, 0, false); 
@@ -395,15 +370,25 @@ public class OSCControllerforAWBExtension extends ControllerExtension
       
       final UIModule splut_mod = new UIModule(TOTAL_BUS_TRACKS, "splut", 8, new int[]{9}, false, false ,0, 0, 0, false); // TODO - param banks
       final UIModule sparkle_mod = new UIModule(TOTAL_BUS_TRACKS + 1, "sparkle", 10, new int[]{11}, false, false, 5, 0, 0, false); 
-      final UIModule deci_mod = new UIModule(TOTAL_BUS_TRACKS + 2, "deci", 11, new int[]{12}, false, false, 5, 0, 0, false); 
-      final UIModule fuzz_mod = new UIModule(TOTAL_BUS_TRACKS + 3, "fuzz", 12, new int[]{13}, false, false, 1, 0, 0, false); 
+      final UIModule deci_mod = new UIModule(TOTAL_BUS_TRACKS + 2, "deci", 12, new int[]{12}, false, false, 5, 0, 0, false); 
+      final UIModule fuzz_mod = new UIModule(TOTAL_BUS_TRACKS + 3, "fuzz", 11, new int[]{13}, false, false, 1, 0, 0, false); 
       final UIModule verb_mod = new UIModule(TOTAL_BUS_TRACKS + 4, "verb_mast", 13, new int[]{15, 14},false, false, 2, 2, 0, false); 
+      
+
+      // use this if doing fx sends
+
+      // final UIModule splut_mod = new UIModule(TOP_LEVEL_GROUPS + TOTAL_BUS_TRACKS, "splut", 8, new int[]{9}, true, false ,0, 0, 0, false); // TODO - param banks
+      // final UIModule sparkle_mod = new UIModule(TOP_LEVEL_GROUPS + TOTAL_BUS_TRACKS + 1, "sparkle", 10, new int[]{11}, true, false, 5, 0, 0, false); 
+      // final UIModule deci_mod = new UIModule(TOP_LEVEL_GROUPS + TOTAL_BUS_TRACKS + 2, "deci", 12, new int[]{12}, true, false, 5, 0, 0, false); 
+      // final UIModule fuzz_mod = new UIModule(TOP_LEVEL_GROUPS + TOTAL_BUS_TRACKS + 3, "fuzz", 11, new int[]{13}, true, false, 1, 0, 0, false); 
+      // final UIModule verb_mod = new UIModule(TOP_LEVEL_GROUPS + TOTAL_BUS_TRACKS + 4, "verb_mast", 13, new int[]{15, 14},true, false, 2, 2, 0, false); 
       
       // UIModule mast_mod = new UIModule(true, 27, "mast", 14, new int[]{15}, true, 2, 0, 0, false); 
 
       final UIModule[] audio_modules = new UIModule[]{vc_mast_mod, vc_in_mod, p2_mast_mod, del_bus_mod, b1_mod, a1_mod, a2_mod, b2_mod};
-      // final UIModule[] delay_modules = new UIModule[]{del_bus_mod, b1_mod, a1_mod, a2_mod, b2_mod};
       final UIModule[] fx_1_modules = new UIModule[]{splut_mod, sparkle_mod, deci_mod, fuzz_mod, verb_mod};
+      
+      // final UIModule[] delay_modules = new UIModule[]{del_bus_mod, b1_mod, a1_mod, a2_mod, b2_mod};
       // UIModule[] fx_2_modules = {sparkle_mod, deci_mod, a1_mod, a2_mod, b2_mod};
 
       
@@ -417,14 +402,15 @@ public class OSCControllerforAWBExtension extends ControllerExtension
       final int FX_SENDS_BASE = 50;
       final int BUS_SENDS_BASE = 70;
       final int BUS_FADERS_BASE = 90;
+       
       
 
       
       
       InterfaceGroup audio_in = new InterfaceGroup( "audio source lines", "track", 12, 0, audio_modules, true);
-      // InterfaceGroup delays = new InterfaceGroup( "audio source lines", "track", 6, 6, delay_modules, true);
+      InterfaceGroup fx_1 = new InterfaceGroup( "fx 1", "fx", TOTAL_BUS_TRACKS + TOTAL_FX_TRACKS, TOTAL_BUS_TRACKS, fx_1_modules, false);
+      // InterfaceGroup fx_1 = new InterfaceGroup( "fx 1", "mixed", TOP_LEVEL_GROUPS + TOTAL_BUS_TRACKS + 5, TOP_LEVEL_GROUPS  + TOTAL_BUS_TRACKS, fx_1_modules, false);
       // InterfaceGroup p2_in = new InterfaceGroup(base, "in lines", "track", 5, p2_modules, false);
-      InterfaceGroup fx_1 = new InterfaceGroup( "fx 1", "fx", TOTAL_BUS_TRACKS + TOTAL_FX_TRACKS, 0, fx_1_modules, false);
 
       
       
@@ -438,10 +424,12 @@ public class OSCControllerforAWBExtension extends ControllerExtension
       sliders = new HardwareSlider[TOTAL_SLIDERS];
       int sliders_i = 0;
       
-      audio_in.init(base, TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START);
-      // delays.init(base, TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START);
+      audio_in.init(base, TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START, true, true);
+      fx_1.init(base, TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START, false, false);
+      // fx_1.init(base, TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START, true, true);
+
       // p2_in.init(TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START);
-      fx_1.init(base, TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START);
+      
 
       
       sliders_i = audio_in.setupSliders(base, sliders, sliders_i, BUS_FADERS_BASE);
