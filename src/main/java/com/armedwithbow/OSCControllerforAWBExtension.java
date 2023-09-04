@@ -179,7 +179,7 @@ public class OSCControllerforAWBExtension extends ControllerExtension
 
 
       // index is track, busindex is effectTrack
-      final UIModule vc_mast_mod = new UIModule( 2, "vc mast", 1, new int[]{}, false, true, 0, 7, 0, false); //vc + ubermod
+      final UIModule vc_fx_mod = new UIModule( 2, "vc mast", 1, new int[]{}, false, true, 0, 7, 0, false); //vc + ubermod
       final UIModule vc_in_mod = new UIModule( 3, "vc in", 0, new int[]{0, 1, 2, 3, 8, 10}, true, false, 0, 7, 0, false); //vc + ubermod
       final UIModule p2_mast_mod = new UIModule(5, "pro2", 7, new int[]{16}, true, true, 0, 0, 0, false); //p2
       
@@ -209,7 +209,7 @@ public class OSCControllerforAWBExtension extends ControllerExtension
       
       // UIModule mast_mod = new UIModule(true, 27, "mast", 14, new int[]{15}, true, 2, 0, 0, false); 
 
-      final UIModule[] audio_modules = new UIModule[]{vc_mast_mod, vc_in_mod, p2_mast_mod, b1_mod, a1_mod, a2_mod, b2_mod};
+      final UIModule[] audio_modules = new UIModule[]{vc_fx_mod, vc_in_mod, p2_mast_mod, b1_mod, a1_mod, a2_mod, b2_mod};
       final UIModule[] fx_1_modules = new UIModule[]{splut_mod, sparkle_mod, deci_mod, fuzz_mod, verb_mod, mast_mod};
       
       // final UIModule[] delay_modules = new UIModule[]{del_bus_mod, b1_mod, a1_mod, a2_mod, b2_mod};
