@@ -10,7 +10,8 @@ import com.bitwig.extension.callback.ShortMidiDataReceivedCallback;
 public class ExtensionBase {
     public final ControllerHost host;
     public final HardwareSurface extensionHardwareSurface;
-    public final MidiIn portIn;
+    public final MidiIn oscPortIn;
+    public final MidiIn scPortIn;
     // public final MidiOut outPort;
     public final TrackBank bus_fader_bank;
  
@@ -18,7 +19,8 @@ public class ExtensionBase {
     {
        this.host = host;
        this.extensionHardwareSurface = host.createHardwareSurface();
-       this.portIn = host.getMidiInPort (0);
+       this.oscPortIn = host.getMidiInPort (0);
+       this.scPortIn = host.getMidiInPort (1);
     //    this.portIn.setMidiCallback (inputCallback);
        this.bus_fader_bank = host.createEffectTrackBank (BUS_SENDS_END, 0);
        

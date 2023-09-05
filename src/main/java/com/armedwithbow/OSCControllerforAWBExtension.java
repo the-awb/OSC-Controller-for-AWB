@@ -113,6 +113,7 @@ public class OSCControllerforAWBExtension extends ControllerExtension
    private final int BUS_SENDS_START = FX_SENDS_END + 1;    
    private final int BUS_SENDS_END = BUS_SENDS_START + TOTAL_BUS_TRACKS;  
 
+   private final String FX_LAYER_ID = "a0913b7f-096b-4ac9-bddd-33c775314b42";
    // private final int INS_MASTER = INS_TRACKBANK_START;      
    // private final int VC_MASTER = INS_MASTER + 1;      
    // private final int P2_MASTER = INS_MASTER + 2;      
@@ -129,6 +130,8 @@ public class OSCControllerforAWBExtension extends ControllerExtension
    {
 
       final ExtensionBase base = new ExtensionBase( getHost(), BUS_SENDS_END);
+
+      base.host.println("starting fresh");
 
       this.hardwareSurface = base.extensionHardwareSurface;
       // final ControllerHost host = getHost();    
@@ -179,17 +182,17 @@ public class OSCControllerforAWBExtension extends ControllerExtension
 
 
       // index is track, busindex is effectTrack
-      final UIModule vc_fx_mod = new UIModule( 2, "vc mast", 1, new int[]{}, false, true, 0, 7, 0, false); //vc + ubermod
-      final UIModule vc_in_mod = new UIModule( 3, "vc in", 0, new int[]{0, 1, 2, 3, 8, 10}, true, false, 0, 7, 0, false); //vc + ubermod
-      final UIModule p2_mast_mod = new UIModule(5, "pro2", 7, new int[]{16}, true, true, 0, 0, 0, false); //p2
+      final DynamicTrackModule vc_fx_mod = new DynamicTrackModule( 2, "vc fx", 1, new int[]{}, false, true, false); //vc + ubermod
+      final DynamicTrackModule vc_in_mod = new DynamicTrackModule( 3, "vc in", 0, new int[]{0, 1, 2, 3, 8, 10}, true, false, false); //vc + ubermod
+      final DynamicTrackModule p2_mast_mod = new DynamicTrackModule(5, "pro2", 7, new int[]{16}, true, true, false); //p2
       
       
 
       // final UIModule del_bus_mod = new UIModule( 7, "del bus", 6, new int[]{}, true, true, 0, 7, 0, true); //vc + ubermod
-      final UIModule b1_mod = new UIModule(9, "del_b1", 2, new int[]{4}, true, true, 6, 0, 0, false); 
-      final UIModule a1_mod = new UIModule(10, "del_a1", 3, new int[]{5}, true, true, 6, 1, 0, false); 
-      final UIModule a2_mod = new UIModule(11, "del_a2", 4, new int[]{6}, true, true, 6, 0, 0,false); 
-      final UIModule b2_mod = new UIModule(12, "del_b2", 5, new int[]{7}, true, true, 6, 0, 0, false); 
+      final DynamicTrackModule b1_mod = new DynamicTrackModule(9, "del_b1", 2, new int[]{4}, true, true, false); 
+      final DynamicTrackModule a1_mod = new DynamicTrackModule(10, "del_a1", 3, new int[]{5}, true, true, false); 
+      final DynamicTrackModule a2_mod = new DynamicTrackModule(11, "del_a2", 4, new int[]{6}, true, true, false); 
+      final DynamicTrackModule b2_mod = new DynamicTrackModule(12, "del_b2", 5, new int[]{7}, true, true, false); 
       
       // final UIModule splut_mod = new UIModule(TOTAL_BUS_TRACKS, "splut", 8, new int[]{9}, true, true ,0, 0, 0, false); // TODO - param banks
       // final UIModule sparkle_mod = new UIModule(TOTAL_BUS_TRACKS + 1, "sparkle", 10, new int[]{11}, true, true, 5, 0, 0, false); 
@@ -200,17 +203,17 @@ public class OSCControllerforAWBExtension extends ControllerExtension
 
       // use this if doing fx sends
 
-      final UIModule splut_mod = new UIModule(FX_TRACKBANK_START, "splut", 8, new int[]{9}, true, false ,0, 0, 0, false); // TODO - param banks
-      final UIModule sparkle_mod = new UIModule(FX_TRACKBANK_START + 1, "sparkle", 10, new int[]{11}, true, false, 5, 0, 0, false); 
-      final UIModule deci_mod = new UIModule(FX_TRACKBANK_START + 2, "deci", 12, new int[]{12}, true, false, 5, 0, 0, false); 
-      final UIModule fuzz_mod = new UIModule(FX_TRACKBANK_START + 3, "fuzz", 11, new int[]{13}, true, false, 1, 0, 0, false); 
-      final UIModule verb_mod = new UIModule(FX_TRACKBANK_START + 4, "verb", 13, new int[]{14},true, false, 2, 2, 0, false); 
-      final UIModule mast_mod = new UIModule(FX_TRACKBANK_START + 5, "mast", 14, new int[]{15},true, false, 2, 2, 0, false); 
+      final DynamicTrackModule splut_mod = new DynamicTrackModule(FX_TRACKBANK_START, "splut", 8, new int[]{9}, true, false , false); // TODO - param banks
+      final DynamicTrackModule sparkle_mod = new DynamicTrackModule(FX_TRACKBANK_START + 1, "sparkle", 10, new int[]{11}, true, false, false); 
+      final DynamicTrackModule deci_mod = new DynamicTrackModule(FX_TRACKBANK_START + 2, "deci", 12, new int[]{12}, true, false, false); 
+      final DynamicTrackModule fuzz_mod = new DynamicTrackModule(FX_TRACKBANK_START + 3, "fuzz", 11, new int[]{13}, true, false, false); 
+      final DynamicTrackModule verb_mod = new DynamicTrackModule(FX_TRACKBANK_START + 4, "verb", 13, new int[]{14},true, false,false); 
+      final DynamicTrackModule mast_mod = new DynamicTrackModule(FX_TRACKBANK_START + 5, "mast", 14, new int[]{15},true, false, false); 
       
       // UIModule mast_mod = new UIModule(true, 27, "mast", 14, new int[]{15}, true, 2, 0, 0, false); 
 
-      final UIModule[] audio_modules = new UIModule[]{vc_fx_mod, vc_in_mod, p2_mast_mod, b1_mod, a1_mod, a2_mod, b2_mod};
-      final UIModule[] fx_1_modules = new UIModule[]{splut_mod, sparkle_mod, deci_mod, fuzz_mod, verb_mod, mast_mod};
+      final DynamicTrackModule[] audio_modules = new DynamicTrackModule[]{vc_fx_mod, vc_in_mod, p2_mast_mod, b1_mod, a1_mod, a2_mod, b2_mod};
+      final DynamicTrackModule[] fx_1_modules = new DynamicTrackModule[]{splut_mod, sparkle_mod, deci_mod, fuzz_mod, verb_mod, mast_mod};
       
       // final UIModule[] delay_modules = new UIModule[]{del_bus_mod, b1_mod, a1_mod, a2_mod, b2_mod};
       // UIModule[] fx_2_modules = {sparkle_mod, deci_mod, a1_mod, a2_mod, b2_mod};
@@ -258,6 +261,8 @@ public class OSCControllerforAWBExtension extends ControllerExtension
       
       sliders_i = audio_in.setupSliders(base, sliders, sliders_i, BUS_FADERS_BASE);
       sliders_i = fx_1.setupSliders(base, sliders, sliders_i, BUS_FADERS_BASE);
+
+      deci_mod.addParamDeviceMapper(base, "deci", FX_LAYER_ID ,0,0);
       // sliders_i = delays.setupSliders(base, sliders, sliders_i, BUS_FADERS_BASE);
       
       // audio_in.groupTrackBank.scrollBy(audio_in.start_index);  //scrollBy(this.start_index);
