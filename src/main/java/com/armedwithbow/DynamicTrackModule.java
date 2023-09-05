@@ -90,12 +90,12 @@ public class DynamicTrackModule {
             base.host.println("Error. Invalid slot assigment for device: " + name);
          }
          };
-         if(cc_base > 0){new DeviceControlMapper(base, track, name, deviceIdString, matcherIndex, this, cc_base);}
+         if(cc_base > 0){this.deviceParamMappers[slot] = new DeviceControlMapper(base, track, name, deviceIdString, matcherIndex, this, cc_base);}
          else { return; }
     }
 
     public void addModDeviceMapper(ExtensionBase base, String name, String deviceIdString, int matcherIndex, int slot){
-      if(this.deviceParamMappers[slot] != null){
+      if(this.deviceModMappers[slot] != null){
          base.host.println("Error. Attempting to add device to slot "+slot+": slot already assigned!");
          return;
       }
@@ -119,7 +119,7 @@ public class DynamicTrackModule {
          }
       };
          
-         if(cc_base > 0){new DeviceControlMapper(base, track, name, deviceIdString, matcherIndex, this, cc_base);}
+         if(cc_base > 0){this.deviceModMappers[slot] = new DeviceControlMapper(base, track, name, deviceIdString, matcherIndex, this, cc_base);}
          else { return; }
     }
 
