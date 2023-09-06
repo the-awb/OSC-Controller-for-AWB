@@ -1,7 +1,6 @@
 package com.armedwithbow;
 import com.bitwig.extension.controller.api.CursorDevice;
 import com.bitwig.extension.controller.api.CursorRemoteControlsPage;
-import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.Device;
 import com.bitwig.extension.controller.api.DeviceBank;
 import com.bitwig.extension.controller.api.DeviceMatcher;
@@ -10,30 +9,21 @@ import com.bitwig.extension.controller.api.Track;
 import java.util.UUID;
 
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
-import com.bitwig.extension.controller.api.ControllerHost;
 
 public class DeviceControlMapper {
-    private final CursorDevice cursorDevice;
-    private final DeviceBank deviceBank;
-    private DeviceMatcher matcher;
-    private final Device device;
+    // private final CursorDevice cursorDevice;
+    // private final DeviceBank deviceBank;
+    // private DeviceMatcher matcher;
+    // private final Device device;
     private final CursorRemoteControlsPage remoteControlsPage;
     static final int BANKSIZE = 8;
     public final AbsoluteHardwareKnob[] paramKnobs;
 
-    DeviceControlMapper(ExtensionBase base, Track track, String name, String deviceIdString, int matcherIndex, DynamicTrackModule mod, int MIDI_BASE_CC){
-        cursorDevice = track.createCursorDevice(name);
-        deviceBank = track.createDeviceBank(1);
-        try{
-            UUID deviceUUID = UUID.fromString(deviceIdString);
-            // assertThrows
-            matcher = base.host.createBitwigDeviceMatcher(deviceUUID);}
-        catch(Exception e) { matcher = base.host.createVST3DeviceMatcher(deviceIdString); };
-        // if(isVST3){matcher = base.host.createVST3DeviceMatcher(deviceIdString);} else {matcher = base.host.createBitwigDeviceMatcher(deviceIdString);}
-        deviceBank.setDeviceMatcher(this.matcher);
-        device = deviceBank.getItemAt(matcherIndex);
+    // DeviceControlMapper(ExtensionBase base, Track track, String name, String deviceIdString, int matcherIndex, DynamicTrackModule mod, int MIDI_BASE_CC, int deviceBankSize){
+    DeviceControlMapper(ExtensionBase base, Device device, String name, DynamicTrackModule mod, int MIDI_BASE_CC){
+        // this.device = device;
         remoteControlsPage = device.createCursorRemoteControlsPage(BANKSIZE);
-        cursorDevice.selectDevice(device);
+        // cursorDevice.selectDevice(device);
 
         paramKnobs = new AbsoluteHardwareKnob[BANKSIZE];
 

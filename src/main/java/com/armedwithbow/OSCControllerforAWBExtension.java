@@ -1,33 +1,36 @@
 package com.armedwithbow;
-import java.util.HashMap;
-import com.bitwig.extension.api.util.midi.ShortMidiMessage;
+// import java.util.HashMap;
+// import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.controller.api.ControllerHost;
-import com.bitwig.extension.controller.api.Transport;
+// import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extension.controller.ControllerExtension;
 
 //import com.bitwig.extension.api.Color;
-import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
-import com.bitwig.extension.controller.api.HardwareButton;
+// import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
+// import com.bitwig.extension.controller.api.HardwareButton;
 //import com.bitwig.extension.controller.api.HardwareLightVisualState;
-import com.bitwig.extension.controller.api.HardwareOutputElement;
+// import com.bitwig.extension.controller.api.HardwareOutputElement;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.HardwareSurface;
-import com.bitwig.extension.controller.api.HardwareTextDisplay;
-import com.bitwig.extension.controller.api.HardwareTextDisplayLine;
-import com.bitwig.extension.controller.api.MidiIn;
-import com.bitwig.extension.controller.api.MidiOut;
+import com.bitwig.extension.controller.api.MasterTrack;
+// import com.bitwig.extension.controller.api.HardwareTextDisplay;
+// import com.bitwig.extension.controller.api.HardwareTextDisplayLine;
+// import com.bitwig.extension.controller.api.MidiIn;
+// import com.bitwig.extension.controller.api.MidiOut;
 //import com.bitwig.extension.controller.api.OnOffHardwareLight;
 //import com.bitwig.extension.controller.api.PianoKeyboard;
-import com.bitwig.extension.controller.api.TrackBank;
-import com.bitwig.extension.controller.api.IntegerHardwareProperty;
+// import com.bitwig.extension.controller.api.TrackBank;
+// import com.bitwig.extension.controller.api.IntegerHardwareProperty;
 // import com.bitwig.extension.controller.api.ChannelBank;
-import com.bitwig.extension.controller.api.Track;
-import com.bitwig.extension.controller.api.SendBank;
-import com.bitwig.extension.controller.api.Send;
+// import com.bitwig.extension.controller.api.Track;
+// import com.bitwig.extension.controller.api.SendBank;
+// import com.bitwig.extension.controller.api.Send;
+import com.bitwig.extension.controller.api.Device;
 // import java.util.function.BooleanSupplier;
-import com.bitwig.extension.controller.api.BooleanValue;
-import com.bitwig.extension.controller.api.StringValue;
-import com.bitwig.extension.controller.api.IntegerValue;
+// import com.bitwig.extension.controller.api.BooleanValue;
+// import com.bitwig.extension.controller.api.StringValue;
+// import com.bitwig.extension.controller.api.IntegerValue;
+import com.bitwig.extension.controller.api.DeviceBank;
 
 /*
  *    TO RUN: mvn install
@@ -113,7 +116,7 @@ public class OSCControllerforAWBExtension extends ControllerExtension
    private final int BUS_SENDS_START = FX_SENDS_END + 1;    
    private final int BUS_SENDS_END = BUS_SENDS_START + TOTAL_BUS_TRACKS;  
 
-   private final String FX_LAYER_ID = "a0913b7f-096b-4ac9-bddd-33c775314b42";
+   
    // private final int INS_MASTER = INS_TRACKBANK_START;      
    // private final int VC_MASTER = INS_MASTER + 1;      
    // private final int P2_MASTER = INS_MASTER + 2;      
@@ -179,6 +182,12 @@ public class OSCControllerforAWBExtension extends ControllerExtension
       * 26 - reverb // 15  (shared with mast)
       * 27 - mast // 15
       */
+//ADD CONSTANTS TO BASE SO DONT HAVE TO KEEP PASSING
+//CREATE INTERFACE GROUPS
+//ADD-CREATE MODULES TO THEM
+//SETUP SLIDERS (func on base)
+//ADD-CREATE PARAM/MOD DEVICES
+//MAKE SCENE DICT
 
 
       // index is track, busindex is effectTrack
@@ -203,12 +212,13 @@ public class OSCControllerforAWBExtension extends ControllerExtension
 
       // use this if doing fx sends
 
-      final DynamicTrackModule splut_mod = new DynamicTrackModule(FX_TRACKBANK_START, "splut", 8, new int[]{9}, true, false , false); // TODO - param banks
+      final DynamicTrackModule splut_mod = new DynamicTrackModule(FX_TRACKBANK_START, "splut", 8, new int[]{9}, true, false , false); 
       final DynamicTrackModule sparkle_mod = new DynamicTrackModule(FX_TRACKBANK_START + 1, "sparkle", 10, new int[]{11}, true, false, false); 
       final DynamicTrackModule deci_mod = new DynamicTrackModule(FX_TRACKBANK_START + 2, "deci", 12, new int[]{12}, true, false, false); 
       final DynamicTrackModule fuzz_mod = new DynamicTrackModule(FX_TRACKBANK_START + 3, "fuzz", 11, new int[]{13}, true, false, false); 
       final DynamicTrackModule verb_mod = new DynamicTrackModule(FX_TRACKBANK_START + 4, "verb", 13, new int[]{14},true, false,false); 
       final DynamicTrackModule mast_mod = new DynamicTrackModule(FX_TRACKBANK_START + 5, "mast", 14, new int[]{15},true, false, false); 
+      
       
       // UIModule mast_mod = new UIModule(true, 27, "mast", 14, new int[]{15}, true, 2, 0, 0, false); 
 
@@ -221,14 +231,14 @@ public class OSCControllerforAWBExtension extends ControllerExtension
       
 
 
-      final int TRACK_FADER_CC = 9;
-      final int ROUTING_BASE = 10;
-      final int CONTROLS_1_BASE = 20;
-      final int CONTROLS_2_BASE = 30;
-      final int CONTROLS_3_BASE = 40;
-      final int FX_SENDS_BASE = 50;
-      final int BUS_SENDS_BASE = 70;
-      final int BUS_FADERS_BASE = 90;
+      // final int TRACK_FADER_CC = 9;
+      // final int ROUTING_BASE = 10;
+      // final int CONTROLS_1_BASE = 20;
+      // final int CONTROLS_2_BASE = 30;
+      // final int CONTROLS_3_BASE = 40;
+      // final int FX_SENDS_BASE = 50;
+      // final int BUS_SENDS_BASE = 70;
+      // final int BUS_FADERS_BASE = 90;
        
       
 
@@ -251,18 +261,37 @@ public class OSCControllerforAWBExtension extends ControllerExtension
       sliders = new HardwareSlider[TOTAL_SLIDERS];
       int sliders_i = 0;
       
-      audio_in.init(base, TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START, true, true);
-      fx_1.init(base, TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START, true, true);
+      audio_in.init(base, TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_START, FX_SENDS_START, true, true);
+      fx_1.init(base, TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_START, FX_SENDS_START, true, true);
       // fx_1.init(base, TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START, true, true);
 
       // p2_in.init(TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_BASE, BUS_SENDS_START, FX_SENDS_BASE, FX_SENDS_START);
       
 
       
-      sliders_i = audio_in.setupSliders(base, sliders, sliders_i, BUS_FADERS_BASE);
-      sliders_i = fx_1.setupSliders(base, sliders, sliders_i, BUS_FADERS_BASE);
+      sliders_i = audio_in.setupSliders(base, sliders, sliders_i);
+      sliders_i = fx_1.setupSliders(base, sliders, sliders_i);
 
-      deci_mod.addParamDeviceMapper(base, "deci", FX_LAYER_ID ,0,0);
+      
+      FXLayerHandler vcFXBank = new FXLayerHandler(base, vc_fx_mod.getTrackDeviceBank(1),0,1);
+      FXLayerHandler sparkFXBank = new FXLayerHandler(base, sparkle_mod.getTrackDeviceBank(1),0,1) ;
+      MasterTrack masterTrack = base.host.createMasterTrack(0); // setting scenes - here. Change in future ??
+      DeviceBank masterRootFXBank = masterTrack.createDeviceBank(3);
+      FXLayerHandler masterFXBank1 = new FXLayerHandler(base, masterRootFXBank,0,4) ; // top level
+      FXLayerHandler masterFXBank2 = new FXLayerHandler(base, masterFXBank1.getLayerDeviceBank(base,0,1, 0, 4),0,5) ; //inner
+      // FXLayerHandler ubermodFX = new FXLayerHandler(base, masterFX2.fxBank.getItemAt(1).get .getLayerDeviceBank(base, 0, 4),0,5) ; //inner
+
+
+
+      // masterTrack.getTrackDeviceBank(1)
+      vc_fx_mod.addParamDeviceMapper(base, "vc params", vcFXBank.getFXDevice(0), 0);
+      deci_mod.addParamDeviceMapper(base, "deci", deci_mod.getTrackDeviceBank(1).getItemAt(0) ,0);
+      sparkle_mod.addModDeviceMapper(base, "sparkle mod", sparkFXBank.getFXDevice(0), 0);
+      sparkle_mod.addParamDeviceMapper(base, "sparkle control", sparkFXBank.getLayerDeviceBank(base, 0,1,0,1).getItemAt(0), 0);
+      verb_mod.addParamDeviceMapper(base, "verb params", verb_mod.getTrackDeviceBank(1).getItemAt(0), 0);
+      mast_mod.addParamDeviceMapper(base, "mast params", masterFXBank1.fxBank.getItemAt(0), 0);
+      mast_mod.addModDeviceMapper(base, "um mod", masterFXBank2.fxBank.getItemAt(1), 1);
+      mast_mod.addParamDeviceMapper(base, "um control", masterFXBank2.getLayerDeviceBank(base, 1, 1, 0, 1).getItemAt(0), 1);
       // sliders_i = delays.setupSliders(base, sliders, sliders_i, BUS_FADERS_BASE);
       
       // audio_in.groupTrackBank.scrollBy(audio_in.start_index);  //scrollBy(this.start_index);
@@ -296,3 +325,4 @@ public class OSCControllerforAWBExtension extends ControllerExtension
 
 
 }
+

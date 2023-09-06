@@ -2,6 +2,8 @@ package com.armedwithbow;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.SendBank;
+import com.bitwig.extension.controller.api.Device;
+import com.bitwig.extension.controller.api.DeviceBank;
 
 // UI Module class
 public class DynamicTrackModule {
@@ -25,6 +27,7 @@ public class DynamicTrackModule {
 
     public Track track;
     public SendBank sends;
+    public DeviceBank trackDeviceBank;
     
     // public HardwareSlider[] sliders;
     // public IntegerHardwareProperty[] bus_IntHarwareProperty;
@@ -56,6 +59,11 @@ public class DynamicTrackModule {
        this.map_fader = map_fader;
        this.deviceParamMappers = new DeviceControlMapper[3];
        this.deviceModMappers = new DeviceControlMapper[3];
+       
+    }
+
+    DeviceBank getTrackDeviceBank(int bankSize){
+      return track.createDeviceBank(bankSize);
     }
  
     public String display()
@@ -72,60 +80,64 @@ public class DynamicTrackModule {
         return moduleInfo;
     }
 
-    public void addParamDeviceMapper(ExtensionBase base, String name, String deviceIdString, int matcherIndex, int slot){
+    public void addParamDeviceMapper(ExtensionBase base, String name, Device device, int slot){
       if(this.deviceParamMappers[slot] != null){
          base.host.println("Error. Attempting to add device to slot "+slot+": slot already assigned!");
          return;
       }
-
-      int cc_base= -1;   
-      switch(slot){
-         case 0 : {cc_base = 10;};
-         break;
-         case 1 : {cc_base = 20;};
-         break;
-         case 2 : {cc_base = 30;};
-         break;
-         default : {
-            base.host.println("Error. Invalid slot assigment for device: " + name);
-         }
-         };
-         if(cc_base > 0){this.deviceParamMappers[slot] = new DeviceControlMapper(base, track, name, deviceIdString, matcherIndex, this, cc_base);}
-         else { return; }
+      else{ 
+         base.host.println("Assinging "+name+" to slot "+slot);
+         int cc_base= -1;   
+         switch(slot){
+            case 0 : {cc_base = base.CONTROLS_1_BASE;};
+            break;
+            case 1 : {cc_base = base.CONTROLS_2_BASE;};
+            break;
+            case 2 : {cc_base = base.CONTROLS_3_BASE;};
+            break;
+            default : {
+               base.host.println("Error. Invalid slot assigment for device: " + name);
+            }
+            };
+            if(cc_base > 0){this.deviceParamMappers[slot] = new DeviceControlMapper(base, device, name, this, cc_base);}
+            else { return; }
+      }
     }
 
-    public void addModDeviceMapper(ExtensionBase base, String name, String deviceIdString, int matcherIndex, int slot){
+    public void addModDeviceMapper(ExtensionBase base, String name, Device device, int slot){
       if(this.deviceModMappers[slot] != null){
-         base.host.println("Error. Attempting to add device to slot "+slot+": slot already assigned!");
+         base.host.println("Error. Attempting to add "+name+" to slot "+slot+": slot already assigned!");
          return;
       }
-
-      int cc_base= -1;   
-      switch(slot){
-         case 0 : {
-            cc_base = 40;
-         }
-         break;
-         case 1 : {
-            cc_base = 50;
-         }
-         break;
-         case 2 : {
-            cc_base = 60;
-         }
-         break;
-         default : {
-            base.host.println("Error. Invalid slot assigment for device: " + name);
-         }
-      };
-         
-         if(cc_base > 0){this.deviceModMappers[slot] = new DeviceControlMapper(base, track, name, deviceIdString, matcherIndex, this, cc_base);}
-         else { return; }
+      else{
+         base.host.println("Assinging "+name+" to slot "+slot);
+         int cc_base= -1;   
+         switch(slot){
+            case 0 : {
+               cc_base = base.MOD_1_BASE;
+            }
+            break;
+            case 1 : {
+               cc_base = base.MOD_2_BASE;
+            }
+            break;
+            case 2 : {
+               cc_base = base.MOD_3_BASE;
+            }
+            break;
+            default : {
+               base.host.println("Error. Invalid slot assigment for device: " + name);
+            }
+         };
+            
+            if(cc_base > 0){this.deviceModMappers[slot] = new DeviceControlMapper(base, device, name, this, cc_base);}
+            else { return; }
+      }
     }
 
  
 
-    public void setupSends(ExtensionBase base, InterfaceGroup interfaceGroup, int TOTAL_BUS_TRACKS, int BUS_SENDS_START, int BUS_SENDS_BASE, int TOTAL_FX_TRACKS, int FX_SENDS_START, int FX_SENDS_BASE){
+    public void setupSends(ExtensionBase base, InterfaceGroup interfaceGroup, int TOTAL_BUS_TRACKS, int BUS_SENDS_START, int TOTAL_FX_TRACKS, int FX_SENDS_START){
       if(map_busses || map_fx) {
          this.track = interfaceGroup.groupTrackBank.getItemAt(index);
          sends = track.sendBank();
@@ -139,7 +151,7 @@ public class DynamicTrackModule {
          for (int k = 0; k < TOTAL_BUS_TRACKS; k++) {
             
                bus_knobs[k] = base.extensionHardwareSurface.createAbsoluteHardwareKnob("ABS_KNOB_"+name.toUpperCase()+"_BUS_"+k);
-               bus_knobs[k].setAdjustValueMatcher (base.oscPortIn.createAbsoluteCCValueMatcher (midi_channel, BUS_SENDS_BASE + k));
+               bus_knobs[k].setAdjustValueMatcher (base.oscPortIn.createAbsoluteCCValueMatcher (midi_channel, base.BUS_SENDS_BASE + k));
                bus_knobs[k].setBinding (sends.getItemAt (k+ BUS_SENDS_START).value());
 
                if(sends.getSizeOfBank() < k + BUS_SENDS_START) {
@@ -155,7 +167,7 @@ public class DynamicTrackModule {
          for (int k = 0; k < TOTAL_FX_TRACKS; k++) {
 
                fx_knobs[k] = base.extensionHardwareSurface.createAbsoluteHardwareKnob("ABS_KNOB_"+name.toUpperCase()+"_FX_"+k);
-               fx_knobs[k].setAdjustValueMatcher (base.oscPortIn.createAbsoluteCCValueMatcher (midi_channel, FX_SENDS_BASE + k));
+               fx_knobs[k].setAdjustValueMatcher (base.oscPortIn.createAbsoluteCCValueMatcher (midi_channel, base.FX_SENDS_BASE + k));
                fx_knobs[k].setBinding (sends.getItemAt (k + FX_SENDS_START).value());
                if(sends.getSizeOfBank() < k + FX_SENDS_START) {
                   break;
