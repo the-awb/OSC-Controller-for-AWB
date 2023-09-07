@@ -25,44 +25,41 @@ public class ExtensionBase {
     public final int FX_SENDS_BASE;
     public final int BUS_SENDS_BASE;
     public final int BUS_FADERS_BASE;
+    public final int TOTAL_BUS_TRACKS;
+    public final int TOTAL_FX_TRACKS;
+    public final int BUS_SENDS_START;
+    public final int BUS_SENDS_END;
+    public final int FX_SENDS_START;
     // public final MidiOut outPort;
     public final TrackBank bus_fader_bank;
  
-    ExtensionBase(ControllerHost host, int BUS_SENDS_END)
+    ExtensionBase(ControllerHost host, int TOTAL_BUS_TRACKS, int TOTAL_FX_TRACKS, int BUS_SENDS_START, int FX_SENDS_START, int BUS_SENDS_END)
+    
     {
        this.host = host;
        this.extensionHardwareSurface = host.createHardwareSurface();
        this.oscPortIn = host.getMidiInPort (0);
        this.scPortIn = host.getMidiInPort (1);
-    //    this.portIn.setMidiCallback (inputCallback);
        this.bus_fader_bank = host.createEffectTrackBank (BUS_SENDS_END, 0);
 
-       TRACK_FADER_CC = 9;
-         ROUTING_BASE = 0;
-         CONTROLS_1_BASE = 10;
-         CONTROLS_2_BASE = 20;
-         CONTROLS_3_BASE = 30;
-         MOD_1_BASE = 40;
-         MOD_2_BASE = 50;
-         MOD_3_BASE = 60;
-         DIRECT_PARAM_BASE = 70;
-         FX_SENDS_BASE = 80;
-         BUS_SENDS_BASE = 100;
-         BUS_FADERS_BASE = 120;
-       
+      TRACK_FADER_CC = 9;
+      ROUTING_BASE = 0;
+      CONTROLS_1_BASE = 10;
+      CONTROLS_2_BASE = 20;
+      CONTROLS_3_BASE = 30;
+      MOD_1_BASE = 40;
+      MOD_2_BASE = 50;
+      MOD_3_BASE = 60;
+      DIRECT_PARAM_BASE = 70;
+      FX_SENDS_BASE = 80;
+      BUS_SENDS_BASE = 100;
+      BUS_FADERS_BASE = 120;
+
+      this.TOTAL_BUS_TRACKS = TOTAL_BUS_TRACKS;
+      this.TOTAL_FX_TRACKS = TOTAL_FX_TRACKS;
+      this.BUS_SENDS_START = BUS_SENDS_START;
+      this. FX_SENDS_START = FX_SENDS_START;
+      this.BUS_SENDS_END = BUS_SENDS_END;
     }
  }
 
- //   "routing": 0,
-//   "controls_1": 10,
-//   "controls_2": 20,
-//   "controls_3": 30,
-//   "mod_1": 40,
-//   "mod_2": 50,
-//   "mod_3": 60,
-//   "device_direct": 70,
-//   "fx_1": 80,
-//   "fx_2": 90,
-//   "bus_1": 100,
-//   "bus_2": 110,
-//   "level": 120

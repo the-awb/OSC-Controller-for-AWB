@@ -1,47 +1,66 @@
 package com.armedwithbow;
 
 import com.bitwig.extension.controller.api.TrackBank;
+import com.bitwig.extension.controller.api.BooleanValue;
+import com.bitwig.extension.controller.api.CursorTrack;
 import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
+import java.lang.System;
+import java.util.HashMap;
+import java.util.Map;
 
 public class InterfaceGroup {
     public final String name;
     public final String type;
-    public final int group_size;
-    public final int start_index;
+    public final int groupSize;
+    public final int startIndex;
     public final Boolean useFlatTrack;
     public TrackBank groupTrackBank;
-    public DynamicTrackModule[] modules;
+    public Map<String, DynamicTrackModule> modulesMap;
+    private ExtensionBase base;
  
-   InterfaceGroup(String name, String type, int group_size, int start_index, DynamicTrackModule[] modules, Boolean useFlatTrack)
+   // InterfaceGroup(ExtensionBase base, String name, String type, int group_size, int start_index, DynamicTrackModule[] modules, Boolean useFlatTrack)
+   InterfaceGroup(ExtensionBase base, String name, String type, int groupSize, int startIndex, Boolean useFlatTrack)
    {
-       this.name = name;
-       this.group_size = group_size;
-       this.start_index = start_index;
-       this.type = type;
-       this.modules = modules;
-       this.useFlatTrack = useFlatTrack;  
+      this.name = name;
+      this.groupSize = groupSize;
+      this.startIndex = startIndex;
+      this.type = type;
+      this.modulesMap = new HashMap<String, DynamicTrackModule>();
+      this.useFlatTrack = useFlatTrack;
+      this.base = base;
+
+      // always mapping sends on groupTrack
+      // this.groupTrackBank = base.host.createMainTrackBank(groupSize, base.TOTAL_BUS_TRACKS + base.TOTAL_FX_TRACKS, 0);
+      
+      switch(type){
+         case "track" : groupTrackBank = base.host.createMainTrackBank(this.groupSize, base.TOTAL_BUS_TRACKS + base.TOTAL_FX_TRACKS, 0);
+            break;
+         case "mixed" : groupTrackBank = base.host.createTrackBank(this.groupSize, base.TOTAL_BUS_TRACKS + base.TOTAL_FX_TRACKS, 0, useFlatTrack);
+            break;
+         case "fx" : groupTrackBank = base.host.createEffectTrackBank(base.TOTAL_BUS_TRACKS + base.TOTAL_FX_TRACKS, 0);
+            break;
+         }
+       
    }
-     
+
+
+      public void addModule(String key, int trackOffset, int midiChannel, int[] bussesToMap, boolean mapBusSends, boolean mapFXSends, boolean mapFader){
+      modulesMap.put(key, new DynamicTrackModule(this.startIndex+trackOffset, key, midiChannel, bussesToMap, mapBusSends, mapFXSends, mapFader, groupTrackBank.getItemAt(startIndex+trackOffset)) );
+
+   }
     
-   public void init(final ExtensionBase base, int TOTAL_BUS_TRACKS, int TOTAL_FX_TRACKS, int BUS_SENDS_START, int FX_SENDS_START, Boolean mapBusSends, Boolean mapFxSends)
+    
+   public void createSendMappings()
     {
-       for(DynamicTrackModule mod: this.modules) {
-          base.host.println(mod.display());
+      for (Map.Entry<String, DynamicTrackModule> modEntry : modulesMap.entrySet()){
+      //  for(DynamicTrackModule mod: this.modulesMap) {
+          base.host.println(modEntry.getValue().display());
          }
          
-       switch(type){
-          case "track" : groupTrackBank = base.host.createMainTrackBank(this.group_size, (mapBusSends ? TOTAL_BUS_TRACKS : 0) + (mapFxSends ? TOTAL_FX_TRACKS : 0), 0);
-             break;
-          case "mixed" : groupTrackBank = base.host.createTrackBank(this.group_size, (mapBusSends ? TOTAL_BUS_TRACKS : 0) + (mapFxSends ? TOTAL_FX_TRACKS : 0), 0, useFlatTrack);
-             break;
-          case "fx" : groupTrackBank = base.host.createEffectTrackBank(TOTAL_BUS_TRACKS + TOTAL_FX_TRACKS, 0);
-             break;
-          }
-         
-
-       for(DynamicTrackModule mod : this.modules) {
-         mod.setupSends(base, this, TOTAL_BUS_TRACKS, BUS_SENDS_START, TOTAL_FX_TRACKS, FX_SENDS_START);
+       
+       for(DynamicTrackModule mod : modulesMap.values()) {
+         mod.setupSends(base, this, base.TOTAL_BUS_TRACKS, base.BUS_SENDS_START, base.TOTAL_FX_TRACKS, base.FX_SENDS_START);
       }
       
     }
@@ -50,7 +69,7 @@ public class InterfaceGroup {
     // setup sliders for bus tracks associated with the group
     public int setupSliders(final ExtensionBase base, HardwareSlider[] sliders, int slider_i)
     {
-       for(DynamicTrackModule mod : modules) {
+       for (DynamicTrackModule mod : modulesMap.values()){
           if(mod.map_fader){
              sliders[slider_i] = base.extensionHardwareSurface.createHardwareSlider (mod.name.toUpperCase()+"_FADER");
              sliders[slider_i].setAdjustValueMatcher (base.oscPortIn.createAbsoluteCCValueMatcher (mod.midi_channel, 9));

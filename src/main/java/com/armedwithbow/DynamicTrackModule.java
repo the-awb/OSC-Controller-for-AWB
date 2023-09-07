@@ -9,6 +9,7 @@ import com.bitwig.extension.controller.api.DeviceBank;
 public class DynamicTrackModule {
    private DeviceControlMapper[] deviceParamMappers;
    private DeviceControlMapper[] deviceModMappers;
+   private DeviceControlMapper[] deviceRoutingMappers;
    //  private DeviceParamMapper device_p3;
    //  private DeviceParamMapper device_mod1;
    //  private DeviceParamMapper device_mod2;
@@ -47,7 +48,7 @@ public class DynamicTrackModule {
      * @param map_fader map fader of primary track
      
      */
-    DynamicTrackModule(int index, String name, int channel, int[] busses, Boolean map_busses,Boolean map_fx, Boolean map_fader)
+    DynamicTrackModule(int index, String name, int channel, int[] busses, Boolean map_busses,Boolean map_fx, Boolean map_fader, Track track)
     {
        // this.isEffectTrack = isEffectTrack;
        this.index = index;
@@ -59,6 +60,8 @@ public class DynamicTrackModule {
        this.map_fader = map_fader;
        this.deviceParamMappers = new DeviceControlMapper[3];
        this.deviceModMappers = new DeviceControlMapper[3];
+       this.deviceRoutingMappers = new DeviceControlMapper[1];
+       this.track = track;
        
     }
 
@@ -135,11 +138,22 @@ public class DynamicTrackModule {
       }
     }
 
+    public void addRoutingDeviceMapper(ExtensionBase base, Device device){
+      if(this.deviceParamMappers[0] != null){
+         base.host.println("Error. Routing mapping already assigned for " + this.name);
+         return;
+      }
+      else{ 
+         base.host.println("Assinging routing mapping for "+this.name);
+         this.deviceParamMappers[0] = new DeviceControlMapper(base, device, this.name + " routing", this, base.ROUTING_BASE);
+      };
+    }
+    
+
  
 
     public void setupSends(ExtensionBase base, InterfaceGroup interfaceGroup, int TOTAL_BUS_TRACKS, int BUS_SENDS_START, int TOTAL_FX_TRACKS, int FX_SENDS_START){
       if(map_busses || map_fx) {
-         this.track = interfaceGroup.groupTrackBank.getItemAt(index);
          sends = track.sendBank();
          base.host.println("track sends: " + String.valueOf(sends.getSizeOfBank()));
       }

@@ -10,21 +10,16 @@ import java.util.UUID;
 public class FXLayerHandler {
 
     private final DeviceMatcher matcher;
-    // public final Device fxDevice;
     public final DeviceBank fxBank;
-    // public final DeviceLayerBank fxLayerBank;
-    // public final int layersSize;
 
 
-    FXLayerHandler(ExtensionBase base, DeviceBank sourceDeviceBank, int sourceIndex, int layersSize){
-        // this.FX_LAYER_ID = ;
-        // this.layersSize = layersSize;
+
+    FXLayerHandler(ExtensionBase base, DeviceBank sourceDeviceBank){
+
         matcher = base.host.createBitwigDeviceMatcher(UUID.fromString("a0913b7f-096b-4ac9-bddd-33c775314b42"));
         sourceDeviceBank.setDeviceMatcher(this.matcher);
         fxBank = sourceDeviceBank;
-        
-        
-        // fxLayerBank.itemCount().markInterested();
+
     }
 
     DeviceBank getLayerDeviceBank(ExtensionBase base, int bankIndex, int layerSize, int layerI, int bankSize){
