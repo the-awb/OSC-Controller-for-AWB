@@ -29,7 +29,7 @@ public class DeviceControlMapper {
 
         for (int i=0; i<BANKSIZE;i++){
             paramKnobs[i] = base.extensionHardwareSurface.createAbsoluteHardwareKnob("ABS_KNOB_"+name.toUpperCase()+"_DEVICE_P"+i);
-            paramKnobs[i].setAdjustValueMatcher (base.scPortIn.createAbsoluteCCValueMatcher (mod.midi_channel, MIDI_BASE_CC + i));
+            paramKnobs[i].setAdjustValueMatcher (base.scPortIn.createAbsoluteCCValueMatcher (mod.midiChannel, MIDI_BASE_CC + i));
             paramKnobs[i].setBinding (remoteControlsPage.getParameter(i));
             remoteControlsPage.getParameter(i).displayedValue().addValueObserver(val -> {base.host.println(val);});
          };

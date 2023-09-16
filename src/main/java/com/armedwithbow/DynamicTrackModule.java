@@ -1,5 +1,6 @@
 package com.armedwithbow;
 import com.bitwig.extension.controller.api.AbsoluteHardwareKnob;
+import com.bitwig.extension.controller.api.HardwareSlider;
 import com.bitwig.extension.controller.api.Track;
 import com.bitwig.extension.controller.api.SendBank;
 import com.bitwig.extension.controller.api.Device;
@@ -15,73 +16,64 @@ public class DynamicTrackModule {
    //  private DeviceParamMapper device_mod2;
    //  private DeviceParamMapper device_mod3;
     
-    private AbsoluteHardwareKnob[] bus_knobs;
-    private AbsoluteHardwareKnob[] fx_knobs;
-    public final Boolean map_fader;
-    // public final Boolean isEffectTrack;
+    private AbsoluteHardwareKnob[] busKnobs;
+    private AbsoluteHardwareKnob[] fxKnobs;
+    private HardwareSlider[] busFaders;
+    private HardwareSlider fader;
+    
+    public final Boolean mapFader;
+
     public final int index;
     public final String name;
-    public final int midi_channel;
+    public final int midiChannel;
     public int[] busses;
-    public final Boolean map_busses;
-    public final Boolean map_fx;
-
     public Track track;
     public SendBank sends;
-    public DeviceBank trackDeviceBank;
-    
-    // public HardwareSlider[] sliders;
-    // public IntegerHardwareProperty[] bus_IntHarwareProperty;
-    // public IntegerHardwareProperty[] fx_IntIHarwarePropertys;
-  
-    //class constructor
+
  
     /**
-     * Construcotr.
+     * Constructor.
      *
      * @param index the track index for the fx / audio relative to the appropriate scope
      * @param name name of the UI module
      * @param channel midi channel for the module
      * @param busses the indexes of the associated bus channels
-     * @param map_busses map bus sends 
-     * @param map_fx map fx sends 
-     * @param map_fader map fader of primary track
+     * @param mapBussesSends map bus sends 
+     * @param mapFxSends map fx sends 
+     * @param mapFader map fader of primary track
      
      */
-    DynamicTrackModule(int index, String name, int channel, int[] busses, Boolean map_busses,Boolean map_fx, Boolean map_fader, Track track)
+    DynamicTrackModule(ExtensionBase base, int index, String name, int channel, int[] busses, Boolean mapBussesSends,Boolean mapFxSends, Boolean mapFader, Track track)
     {
        // this.isEffectTrack = isEffectTrack;
        this.index = index;
        this.name = name;
-       this.midi_channel = channel;
+       this.midiChannel = channel;
        this.busses = busses;
-       this.map_busses = map_busses;
-       this.map_fx = map_fx;
-       this.map_fader = map_fader;
+       this.mapFader = mapFader;
        this.deviceParamMappers = new DeviceControlMapper[3];
        this.deviceModMappers = new DeviceControlMapper[3];
        this.deviceRoutingMappers = new DeviceControlMapper[1];
        this.track = track;
+
+       if(mapBussesSends||mapFxSends){
+         this.setupSends(base, mapBussesSends,mapFxSends);
+       }
+
+       if (busses.length>0){
+         this.createBusFaderMappings(base);
+       }
+
+       if(mapFader){
+         createFaderMapping(base);
+       }
        
     }
 
-    DeviceBank getTrackDeviceBank(int bankSize){
-      return track.createDeviceBank(bankSize);
+    DeviceBank createDeviceBank(int bankSize){
+       return track.createDeviceBank(bankSize);
     }
  
-    public String display()
-    {
-       String newLine = System.getProperty("line.separator"); 
-       String moduleInfo = ("UI Module:" + 
-                            newLine + "\tindex: "+ index +
-                            newLine + "\tname: "+ name +
-                            newLine + "\tchannel: "+ midi_channel +
-                            newLine + "\tbusses: "+ busses +
-                            newLine + "\tmap sends: "+ map_busses +
-                            newLine + "\tmap sends: "+ map_fx
-                           );
-        return moduleInfo;
-    }
 
     public void addParamDeviceMapper(ExtensionBase base, String name, Device device, int slot){
       if(this.deviceParamMappers[slot] != null){
@@ -139,36 +131,51 @@ public class DynamicTrackModule {
     }
 
     public void addRoutingDeviceMapper(ExtensionBase base, Device device){
-      if(this.deviceParamMappers[0] != null){
+      if(this.deviceRoutingMappers[0] != null){
          base.host.println("Error. Routing mapping already assigned for " + this.name);
          return;
       }
       else{ 
          base.host.println("Assinging routing mapping for "+this.name);
-         this.deviceParamMappers[0] = new DeviceControlMapper(base, device, this.name + " routing", this, base.ROUTING_BASE);
+         this.deviceRoutingMappers[0] = new DeviceControlMapper(base, device, this.name + " routing", this, base.ROUTING_BASE);
       };
+    }
+
+    public void createFaderMapping(ExtensionBase base){
+      fader = base.extensionHardwareSurface.createHardwareSlider (name.toUpperCase()+"_FADER");
+      fader.setAdjustValueMatcher (base.scPortIn.createAbsoluteCCValueMatcher (midiChannel, base.TRACK_FADER_CC));
+      fader.setBinding (track.volume ());
+    }
+
+    public void createBusFaderMappings(ExtensionBase base){
+      busFaders = new HardwareSlider[busses.length];
+      for (int i = 0; i < busses.length; i++) {
+         busFaders[i] = base.extensionHardwareSurface.createHardwareSlider ("SLIDER_"+name.toUpperCase()+"_"+i);
+         busFaders[i].setAdjustValueMatcher (base.oscPortIn.createAbsoluteCCValueMatcher (midiChannel, base.BUS_FADERS_BASE + i));
+         busFaders[i].setBinding (base.bus_fader_bank.getItemAt (busses[i]).volume ());
+      }
     }
     
 
  
 
-    public void setupSends(ExtensionBase base, InterfaceGroup interfaceGroup, int TOTAL_BUS_TRACKS, int BUS_SENDS_START, int TOTAL_FX_TRACKS, int FX_SENDS_START){
-      if(map_busses || map_fx) {
+    public void setupSends(ExtensionBase base, boolean mapBussesSends, boolean mapFxSends){
+      // if(mapBusses || mapFx) {
          sends = track.sendBank();
-         base.host.println("track sends: " + String.valueOf(sends.getSizeOfBank()));
-      }
+         // base.host.println("track sends: " + String.valueOf(sends.getSizeOfBank()));
+      // }
 
       // map bus sends
-      if(map_busses) {
+      if(mapBussesSends) {
 
-         bus_knobs = new AbsoluteHardwareKnob[TOTAL_BUS_TRACKS];
-         for (int k = 0; k < TOTAL_BUS_TRACKS; k++) {
+         busKnobs = new AbsoluteHardwareKnob[base.TOTAL_BUS_TRACKS];
+         for (int k = 0; k < base.TOTAL_BUS_TRACKS; k++) {
             
-               bus_knobs[k] = base.extensionHardwareSurface.createAbsoluteHardwareKnob("ABS_KNOB_"+name.toUpperCase()+"_BUS_"+k);
-               bus_knobs[k].setAdjustValueMatcher (base.oscPortIn.createAbsoluteCCValueMatcher (midi_channel, base.BUS_SENDS_BASE + k));
-               bus_knobs[k].setBinding (sends.getItemAt (k+ BUS_SENDS_START).value());
+               busKnobs[k] = base.extensionHardwareSurface.createAbsoluteHardwareKnob("ABS_KNOB_"+name.toUpperCase()+"_BUS_"+k);
+               busKnobs[k].setAdjustValueMatcher (base.oscPortIn.createAbsoluteCCValueMatcher (midiChannel, base.BUS_SENDS_BASE + k));
+               busKnobs[k].setBinding (sends.getItemAt (k+ base.BUS_SENDS_START).value());
 
-               if(sends.getSizeOfBank() < k + BUS_SENDS_START) {
+               if(sends.getSizeOfBank() < k + base.BUS_SENDS_START) {
                   break;
                }
                // bus_knobs[k]
@@ -176,21 +183,18 @@ public class DynamicTrackModule {
       }
 
       // map fx sends
-      if(map_fx) {
-         fx_knobs = new AbsoluteHardwareKnob[TOTAL_FX_TRACKS];
-         for (int k = 0; k < TOTAL_FX_TRACKS; k++) {
+      if(mapFxSends) {
+         fxKnobs = new AbsoluteHardwareKnob[base.TOTAL_FX_TRACKS];
+         for (int k = 0; k < base.TOTAL_FX_TRACKS; k++) {
 
-               fx_knobs[k] = base.extensionHardwareSurface.createAbsoluteHardwareKnob("ABS_KNOB_"+name.toUpperCase()+"_FX_"+k);
-               fx_knobs[k].setAdjustValueMatcher (base.oscPortIn.createAbsoluteCCValueMatcher (midi_channel, base.FX_SENDS_BASE + k));
-               fx_knobs[k].setBinding (sends.getItemAt (k + FX_SENDS_START).value());
-               if(sends.getSizeOfBank() < k + FX_SENDS_START) {
+               fxKnobs[k] = base.extensionHardwareSurface.createAbsoluteHardwareKnob("ABS_KNOB_"+name.toUpperCase()+"_FX_"+k);
+               fxKnobs[k].setAdjustValueMatcher (base.oscPortIn.createAbsoluteCCValueMatcher (midiChannel, base.FX_SENDS_BASE + k));
+               fxKnobs[k].setBinding (sends.getItemAt (k + base.FX_SENDS_START).value());
+               if(sends.getSizeOfBank() < k + base.FX_SENDS_START) {
                   break;
                }
             }
       }
 
-      //create cursor
-
-      // this.cursorTrack = base.host.createCursorTrack(this.name+"_CURSOR", this.name+"_cursor_track", TOTAL_BUS_TRACKS + TOTAL_FX_TRACKS, 0, false);
     }
  }

@@ -46,46 +46,21 @@ public class InterfaceGroup {
 
 
       public void addModule(String key, int trackOffset, int midiChannel, int[] bussesToMap, boolean mapBusSends, boolean mapFXSends, boolean mapFader){
-      modulesMap.put(key, new DynamicTrackModule(this.startIndex+trackOffset, key, midiChannel, bussesToMap, mapBusSends, mapFXSends, mapFader, groupTrackBank.getItemAt(startIndex+trackOffset)) );
+      modulesMap.put(key, new DynamicTrackModule(base, this.startIndex+trackOffset, key, midiChannel, bussesToMap, mapBusSends, mapFXSends, mapFader, groupTrackBank.getItemAt(startIndex+trackOffset)) );
 
    }
     
     
-   public void createSendMappings()
-    {
-      for (Map.Entry<String, DynamicTrackModule> modEntry : modulesMap.entrySet()){
-      //  for(DynamicTrackModule mod: this.modulesMap) {
-          base.host.println(modEntry.getValue().display());
-         }
-         
-       
-       for(DynamicTrackModule mod : modulesMap.values()) {
-         mod.setupSends(base, this, base.TOTAL_BUS_TRACKS, base.BUS_SENDS_START, base.TOTAL_FX_TRACKS, base.FX_SENDS_START);
-      }
-      
-    }
 
 
     // setup sliders for bus tracks associated with the group
-    public int setupSliders(final ExtensionBase base, HardwareSlider[] sliders, int slider_i)
+    public void createBusFaderMappings()
     {
        for (DynamicTrackModule mod : modulesMap.values()){
-          if(mod.map_fader){
-             sliders[slider_i] = base.extensionHardwareSurface.createHardwareSlider (mod.name.toUpperCase()+"_FADER");
-             sliders[slider_i].setAdjustValueMatcher (base.oscPortIn.createAbsoluteCCValueMatcher (mod.midi_channel, 9));
-             sliders[slider_i].setBinding (groupTrackBank.getItemAt (mod.index).volume ());
-             slider_i++;
-          }
-          for (int j = 0; j < mod.busses.length; j++) {
-             sliders[slider_i] = base.extensionHardwareSurface.createHardwareSlider ("SLIDER_"+mod.name.toUpperCase()+"_"+j);
-             sliders[slider_i].setAdjustValueMatcher (base.oscPortIn.createAbsoluteCCValueMatcher (mod.midi_channel, base.BUS_FADERS_BASE + j));
-             sliders[slider_i].setBinding (base.bus_fader_bank.getItemAt (mod.busses[j]).volume ());
-             
-             
-             slider_i++;
-          }
+
+
+          mod.createBusFaderMappings(base);
        }
-       return slider_i;
     }
 // /** {@inheritDoc} */
     // @Override
