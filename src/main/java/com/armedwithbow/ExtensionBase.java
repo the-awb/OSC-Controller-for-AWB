@@ -8,39 +8,41 @@ import com.bitwig.extension.controller.api.TrackBank;
 import com.bitwig.extension.callback.ShortMidiDataReceivedCallback;
 
 public class ExtensionBase {
-    public final ControllerHost host;
-    public final HardwareSurface extensionHardwareSurface;
-    public final MidiIn oscPortIn;
-    public final MidiIn scPortIn;
-   
-    public final int TRACK_FADER_CC;
-    public final int ROUTING_BASE;
-    public final int CONTROLS_1_BASE;
-    public final int CONTROLS_2_BASE;
-    public final int CONTROLS_3_BASE;
-    public final int MOD_1_BASE;
-    public final int MOD_2_BASE;
-    public final int MOD_3_BASE;
-    public final int DIRECT_PARAM_BASE;
-    public final int FX_SENDS_BASE;
-    public final int BUS_SENDS_BASE;
-    public final int BUS_FADERS_BASE;
-    public final int TOTAL_BUS_TRACKS;
-    public final int TOTAL_FX_TRACKS;
-    public final int BUS_SENDS_START;
-    public final int BUS_SENDS_END;
-    public final int FX_SENDS_START;
-    // public final MidiOut outPort;
-    public final TrackBank bus_fader_bank;
- 
-    ExtensionBase(ControllerHost host, int TOTAL_BUS_TRACKS, int TOTAL_FX_TRACKS, int BUS_SENDS_START, int FX_SENDS_START, int BUS_SENDS_END)
-    
-    {
-       this.host = host;
-       this.extensionHardwareSurface = host.createHardwareSurface();
-       this.oscPortIn = host.getMidiInPort (0);
-       this.scPortIn = host.getMidiInPort (1);
-       this.bus_fader_bank = host.createEffectTrackBank (BUS_SENDS_END, 0);
+   public final ControllerHost host;
+   public final HardwareSurface extensionHardwareSurface;
+   public final MidiIn oscPortIn;
+   public final MidiIn scPortIn;
+
+   public final int TRACK_FADER_CC;
+   public final int ROUTING_BASE;
+   public final int CONTROLS_1_BASE;
+   public final int CONTROLS_2_BASE;
+   public final int CONTROLS_3_BASE;
+   public final int MOD_1_BASE;
+   public final int MOD_2_BASE;
+   public final int MOD_3_BASE;
+   public final int DIRECT_PARAM_BASE;
+   public final int FX_SENDS_BASE;
+   public final int BUS_SENDS_BASE;
+   public final int BUS_FADERS_BASE;
+   public final int TOTAL_BUS_TRACKS;
+   public final int TOTAL_FX_TRACKS;
+   public final int BUS_SENDS_START;
+   public final int BUS_SENDS_END;
+   public final int FX_SENDS_START;
+   public final int SCENE_SLOTS;
+   // public final MidiOut outPort;
+   public final TrackBank bus_fader_bank;
+
+   ExtensionBase(ControllerHost host, int TOTAL_BUS_TRACKS, int TOTAL_FX_TRACKS, int BUS_SENDS_START,
+         int FX_SENDS_START, int BUS_SENDS_END, int SCENE_SLOTS)
+
+   {
+      this.host = host;
+      this.extensionHardwareSurface = host.createHardwareSurface();
+      this.oscPortIn = host.getMidiInPort(0);
+      this.scPortIn = host.getMidiInPort(1);
+      this.bus_fader_bank = host.createEffectTrackBank(BUS_SENDS_END, 0);
 
       TRACK_FADER_CC = 9;
       ROUTING_BASE = 0;
@@ -58,8 +60,8 @@ public class ExtensionBase {
       this.TOTAL_BUS_TRACKS = TOTAL_BUS_TRACKS;
       this.TOTAL_FX_TRACKS = TOTAL_FX_TRACKS;
       this.BUS_SENDS_START = BUS_SENDS_START;
-      this. FX_SENDS_START = FX_SENDS_START;
+      this.FX_SENDS_START = FX_SENDS_START;
       this.BUS_SENDS_END = BUS_SENDS_END;
-    }
- }
-
+      this.SCENE_SLOTS = SCENE_SLOTS;
+   }
+}
