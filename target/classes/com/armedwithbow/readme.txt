@@ -11,6 +11,8 @@ These busses are originally sending audio from Bitwig to a motu 1248 and on to S
 This was because generating midi from envelope followers in Bitwig (in the normal interface) was chocking the and becoming on-responsive.
 May-25 system update to try sending OSC messages, handling the message sending with a script to avoid chocking.
 
+Note: outputs to port 9000. Value is hardcoded, Can be changed in ExtensionBase
+
 ExtensionBase 
 // wrapper for host.
 // stores constants to define number of BUS sends, FX sends, domains for midi messaging, midi ports, and oscConnection
