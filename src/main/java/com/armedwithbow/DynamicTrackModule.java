@@ -10,16 +10,15 @@ import com.bitwig.extension.controller.api.DeviceBank;
 
 import com.armedwithbow.TrackSceneMapper;
 
+// Main Class
+
 // UI Module class
 public class DynamicTrackModule {
    private DeviceControlMapper[] deviceParamMappers;
    private DeviceControlMapper[] deviceModMappers;
    private DeviceControlMapper[] deviceRoutingMappers;
-   // private DeviceParamMapper device_p3;
-   // private DeviceParamMapper device_mod1;
-   // private DeviceParamMapper device_mod2;
-   // private DeviceParamMapper device_mod3;
    private TrackSceneMapper trackSceneMapper;
+   private EnvFollowerOscObserver[] envFollowerOscObservers;
 
    private AbsoluteHardwareKnob[] busKnobs;
    private AbsoluteHardwareKnob[] fxKnobs;
@@ -40,18 +39,23 @@ public class DynamicTrackModule {
    /**
     * Constructor.
     *
-    * @param index          the track index for the fx / audio relative to the
-    *                       appropriate scope
-    * @param name           name of the UI module
-    * @param channel        midi channel for the module
-    * @param busses         the indexes of the associated bus channels
-    * @param mapBussesSends map bus sends
-    * @param mapFxSends     map fx sends
-    * @param mapFader       map fader of primary track
+    * @param index                   the track index for the fx / audio relative to
+    *                                the
+    *                                appropriate scope
+    * @param name                    name of the UI module
+    * @param channel                 midi channel for the module
+    * @param busses                  the indexes of the associated bus channels
+    * @param mapBussesSends          map bus sends
+    * @param mapFxSends              map fx sends
+    * @param mapFader                map fader of primary track
+    * @param track                   the track
+    * @param mapBusEnvelopeFollowers try to map an envelope follower for each bus
+    *                                tracks
     * 
     */
+
    DynamicTrackModule(ExtensionBase base, int index, String name, int channel, int[] busses, Boolean mapBussesSends,
-         Boolean mapFxSends, Boolean mapFader, Track track) {
+         Boolean mapFxSends, Boolean mapFader, Track track, Boolean mapBusEnvelopeFollowers) {
       // this.isEffectTrack = isEffectTrack;
       this.index = index;
       this.name = name;
@@ -62,6 +66,13 @@ public class DynamicTrackModule {
       this.deviceModMappers = new DeviceControlMapper[3];
       this.deviceRoutingMappers = new DeviceControlMapper[1];
       this.track = track;
+      // this.mapBusEnvelopeFollowers = mapBusEnvelopeFollowers;
+      if (mapBusEnvelopeFollowers) {
+         envFollowerOscObservers = new EnvFollowerOscObserver[busses.length];
+         createBusEnvelopeObservers(base);
+      } else {
+         envFollowerOscObservers = new EnvFollowerOscObserver[0];
+      }
 
       if (mapBussesSends || mapFxSends) {
          this.setupSends(base, mapBussesSends, mapFxSends);
@@ -73,6 +84,10 @@ public class DynamicTrackModule {
 
       if (mapFader) {
          createFaderMapping(base);
+      }
+
+      if (mapBusEnvelopeFollowers) {
+
       }
 
    }
@@ -180,6 +195,32 @@ public class DynamicTrackModule {
          busFaders[i].setAdjustValueMatcher(
                base.oscPortIn.createAbsoluteCCValueMatcher(midiChannel, base.BUS_FADERS_BASE + i));
          busFaders[i].setBinding(base.bus_fader_bank.getItemAt(busses[i]).volume());
+         // Add envelope follower observer
+
+      }
+   }
+
+   public void createBusEnvelopeObservers(ExtensionBase base) {
+      for (int i = 0; i < busses.length; i++) {
+         final int thisIndex = i;
+         ToolDeviceHandler toolDeviceHandler = new ToolDeviceHandler(base,
+               base.bus_fader_bank.getItemAt(this.busses[thisIndex]).createDeviceBank(3));
+         Device matchedDevice = toolDeviceHandler.getToolDevice(0);
+         base.host.println("Device matched successfully!");
+         this.envFollowerOscObservers[thisIndex] = new EnvFollowerOscObserver(matchedDevice, base, this.name,
+               thisIndex);
+         // if (matchedDevice != null) {
+         // }
+         // matchedDevice.exists().addValueObserver(exists -> {
+         // if (exists) {
+         // // Proceed with using the device
+         // } else {
+         // base.host.println("No matching device found");
+         // // Handle the case where no device matches
+         // }
+         // });
+
+         base.host.println(String.format("Created envelope observer for %s on bus channel %d", name, thisIndex));
       }
    }
 

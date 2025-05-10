@@ -1,6 +1,10 @@
 package com.armedwithbow;
 
 import com.bitwig.extension.controller.api.ControllerHost;
+
+import java.io.IOException;
+import java.util.Map;
+
 // import com.bitwig.extension.controller.api.Transport;
 import com.bitwig.extension.controller.ControllerExtension;
 // import java.util.HashMap;
@@ -15,6 +19,13 @@ import com.bitwig.extension.controller.api.DeviceBank;
  */
 
 public class OSCControllerforAWBExtension extends ControllerExtension {
+      // Other fields...
+      private ExtensionBase base; // Make it a class field instead of a local variable
+
+      protected OSCControllerforAWBExtension(final OSCControllerforAWBExtensionDefinition definition,
+                  final ControllerHost host) {
+            super(definition, host);
+      }
 
       private final int TOTAL_BUS_TRACKS = 18; // tracks that are just BUS OUT
       private final int TOP_LEVEL_GROUPS = 8; // Top level Groups of tracks
@@ -32,20 +43,35 @@ public class OSCControllerforAWBExtension extends ControllerExtension {
 
       private HardwareSurface hardwareSurface;
 
-      protected OSCControllerforAWBExtension(final OSCControllerforAWBExtensionDefinition definition,
-                  final ControllerHost host) {
-            super(definition, host);
-      }
-
       @Override
       public void init() {
-
-            final ExtensionBase base = new ExtensionBase(getHost(), TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_START,
+            this.base = new ExtensionBase(getHost(), TOTAL_BUS_TRACKS, TOTAL_FX_TRACKS, BUS_SENDS_START,
                         FX_SENDS_START, BUS_SENDS_END, SCENE_SLOTS);
 
-            base.host.println("starting fresh");
+            // public class OSCControllerforAWBExtension extends ControllerExtension {
+
+            // final ExtensionBase base;
+
+            // protected OSCControllerforAWBExtension(final
+            // OSCControllerforAWBExtensionDefinition definition,
+            // final ControllerHost host) {
+            // super(definition, host);
+            // }
+
+            // @Override
+            // public void init() {
+
+            // final ExtensionBase base = new ExtensionBase(getHost(), TOTAL_BUS_TRACKS,
+            // TOTAL_FX_TRACKS, BUS_SENDS_START,
+            // FX_SENDS_START, BUS_SENDS_END, SCENE_SLOTS);
+
+            // base.host.println("starting fresh");
 
             this.hardwareSurface = base.extensionHardwareSurface;
+
+            /*
+             * Uses Interface groups for groups of tracks
+             */
 
             ///////////////////////////////////
             // 0. Create the constants
@@ -58,31 +84,37 @@ public class OSCControllerforAWBExtension extends ControllerExtension {
             InterfaceGroup fx_1 = new InterfaceGroup(base, "fx 1", "mixed", FX_TRACKBANK_START + base.TOTAL_FX_TRACKS,
                         FX_TRACKBANK_START, 0, true);
 
-            audio_in.addModule("vc fx", 2, 1, new int[] {}, false, true, false); // vc + ubermod
-            audio_in.addModule("vc in", 3, 0, new int[] { 0, 1, 2, 3 }, true, false, false); // vc + ubermod
-            audio_in.addModule("pro2", 5, 7, new int[] { 16 }, true, true, false); // p2
+            audio_in.addModule("vcfx", 2, 1, new int[] {}, false, true, false, false); // vc + ubermod
+            audio_in.addModule("vcin", 3, 0, new int[] { 0, 1, 2, 3 }, true, false, false, true); // vc + ubermod
+            audio_in.addModule("pro2", 5, 7, new int[] { 16 }, true, true, false, true); // p2
 
-            audio_in.addModule("del_b1", 9, 2, new int[] { 4 }, true, true, false);
-            audio_in.addModule("del_a1", 10, 3, new int[] { 5 }, true, true, false);
-            audio_in.addModule("del_a2", 11, 4, new int[] { 6 }, true, true, false);
-            audio_in.addModule("del_b2", 12, 5, new int[] { 7 }, true, true, false);
-            audio_in.addModule("del_bus", 8, 6, new int[] {}, true, true, true);
+            audio_in.addModule("del_b1", 9, 2, new int[] { 4 }, true, true, false, true);
+            audio_in.addModule("del_a1", 10, 3, new int[] { 5 }, true, true, false, true);
+            audio_in.addModule("del_a2", 11, 4, new int[] { 6 }, true, true, false, true);
+            audio_in.addModule("del_b2", 12, 5, new int[] { 7 }, true, true, false, true);
+            audio_in.addModule("del_bus", 8, 6, new int[] {}, true, true, true, false);
 
-            fx_1.addModule("splut", 0, 8, new int[] { 9 }, true, false, false);
-            fx_1.addModule("sparkle", 1, 10, new int[] { 11 }, true, false, false);
-            fx_1.addModule("deci", 2, 11, new int[] { 12 }, true, false, false);
-            fx_1.addModule("fuzz", 3, 12, new int[] { 13 }, true, false, false);
-            fx_1.addModule("verb", 4, 13, new int[] { 14 }, true, false, false);
-            fx_1.addModule("mast", 5, 14, new int[] { 15, 10, 8 }, true, false, false);
+            fx_1.addModule("splut", 0, 8, new int[] { 9 }, true, false, false, true);
+            fx_1.addModule("sparkle", 1, 10, new int[] { 11 }, true, false, false, true);
+            fx_1.addModule("deci", 2, 11, new int[] { 12 }, true, false, false, true);
+            fx_1.addModule("fuzz", 3, 12, new int[] { 13 }, true, false, false, true);
+            fx_1.addModule("verb", 4, 13, new int[] { 14 }, true, false, false, true);
+            fx_1.addModule("mast", 5, 14, new int[] { 15, 10, 8 }, true, false, false, true);
 
             /////////////////////////////////////////////////////////////////////////////////////
             // 1. Create the controls
 
             // 1.1 Create input controls
 
-            FXLayerHandler vcFXBank = new FXLayerHandler(base, audio_in.modulesMap.get("vc fx").createDeviceBank(1));
+            // FXLayerHandler is a wrapper to an FXLayer device on the track by ID
+            // InstrumentLayerHandler is a wrapper to an InstrumentLayer device on the track
+            // by ID
+
+            // fx layer for groups for vc and p2
+            FXLayerHandler vcFXBank = new FXLayerHandler(base, audio_in.modulesMap.get("vcfx").createDeviceBank(1));
             FXLayerHandler pro2FXBank = new FXLayerHandler(base, audio_in.modulesMap.get("pro2").createDeviceBank(1));
 
+            // instrument Layers for delays
             InstrumentLayerHandler b1InstBank = new InstrumentLayerHandler(base,
                         audio_in.modulesMap.get("del_b1").createDeviceBank(3));
             InstrumentLayerHandler b2InstBank = new InstrumentLayerHandler(base,
@@ -92,8 +124,11 @@ public class OSCControllerforAWBExtension extends ControllerExtension {
             InstrumentLayerHandler a2InstBank = new InstrumentLayerHandler(base,
                         audio_in.modulesMap.get("del_a2").createDeviceBank(2));
 
+            // FX layers for FX chains
             FXLayerHandler sparkFXBank = new FXLayerHandler(base, fx_1.modulesMap.get("sparkle").createDeviceBank(1));
             FXLayerHandler splutterFXBank = new FXLayerHandler(base, fx_1.modulesMap.get("splut").createDeviceBank(1));
+
+            // master track for Master
             MasterTrack masterTrack = base.host.createMasterTrack(0); // setting scenes - here. Change in future ??
             DeviceBank masterRootFXBank = masterTrack.createDeviceBank(3);
             FXLayerHandler masterFXBank1 = new FXLayerHandler(base, masterRootFXBank); // top level
@@ -139,7 +174,7 @@ public class OSCControllerforAWBExtension extends ControllerExtension {
             audio_in.modulesMap.get("del_b2").addParamDeviceMapper(base, "b2 time",
                         b2InstBank.getLayerDeviceBank(base, 0, 1, 0, 2).getItemAt(1), 1);
 
-            audio_in.modulesMap.get("vc fx").addParamDeviceMapper(base, "vc params", vcFXBank.getFXDevice(0), 0);
+            audio_in.modulesMap.get("vcfx").addParamDeviceMapper(base, "vc params", vcFXBank.getFXDevice(0), 0);
             audio_in.modulesMap.get("pro2").addParamDeviceMapper(base, "p2 params", pro2FXBank.getFXDevice(0), 0);
 
             fx_1.modulesMap.get("deci").addParamDeviceMapper(base, "deci",
@@ -173,6 +208,8 @@ public class OSCControllerforAWBExtension extends ControllerExtension {
 
             base.host.showPopupNotification("OSC Controller for AWB Initialized");
 
+            base.host.println("OSC Controller for AWB Initialized");
+
       }
 
       @Override
@@ -183,10 +220,34 @@ public class OSCControllerforAWBExtension extends ControllerExtension {
             getHost().showPopupNotification("OSC Controller for AWB Exited");
       }
 
+      // In your main controller extension class that extends ControllerExtension
       @Override
       public void flush() {
-            // if (this.hardwareSurface != null)
-            // this.hardwareSurface.updateHardware ();
+            // Send any pending OSC messages as a bundle
+            if (this.base != null && !this.base.pendingOscMessages.isEmpty()) {
+                  // getHost().println("Sending bundle with " +
+                  // this.base.pendingOscMessages.size() + " messages");
+
+                  try {
+                        this.base.oscConnection.startBundle();
+
+                        for (Map.Entry<String, Double> entry : this.base.pendingOscMessages.entrySet()) {
+                              String address = entry.getKey();
+                              Double value = entry.getValue();
+                              this.base.oscConnection.sendMessage(address, value);
+                              // getHost().println(" - Bundled: " + address + " -> " + value);
+                        }
+
+                        this.base.oscConnection.endBundle();
+                        // getHost().println("Bundle sent successfully");
+
+                        // Important: clear after successful sending
+                        this.base.pendingOscMessages.clear();
+                  } catch (IOException e) {
+                        getHost().println("ERROR: Failed to send OSC bundle: " + e.getMessage());
+                        getHost().println(e.toString()); // Print the full exception
+                  }
+            }
             if (this.hardwareSurface != null)
                   this.hardwareSurface.updateHardware();
       }

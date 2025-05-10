@@ -9,6 +9,10 @@ import java.lang.System;
 import java.util.HashMap;
 import java.util.Map;
 
+/*
+ * Contains a groupTrackBank which serves as the reference for a bundle of Tracks
+ * AWB is set up to use 2 - 1 for sound sources (audio inputs), one for FX chains
+ */
 public class InterfaceGroup {
    public final String name;
    public final String type;
@@ -19,8 +23,6 @@ public class InterfaceGroup {
    public Map<String, DynamicTrackModule> modulesMap;
    private ExtensionBase base;
 
-   // InterfaceGroup(ExtensionBase base, String name, String type, int group_size,
-   // int start_index, DynamicTrackModule[] modules, Boolean useFlatTrack)
    InterfaceGroup(ExtensionBase base, String name, String type, int groupSize, int startIndex, int clipBankSize,
          Boolean useFlatTrack) {
       this.name = name;
@@ -30,10 +32,6 @@ public class InterfaceGroup {
       this.modulesMap = new HashMap<String, DynamicTrackModule>();
       this.useFlatTrack = useFlatTrack;
       this.base = base;
-
-      // always mapping sends on groupTrack
-      // this.groupTrackBank = base.host.createMainTrackBank(groupSize,
-      // base.TOTAL_BUS_TRACKS + base.TOTAL_FX_TRACKS, 0);
 
       switch (type) {
          case "track":
@@ -53,9 +51,10 @@ public class InterfaceGroup {
    }
 
    public void addModule(String key, int trackOffset, int midiChannel, int[] bussesToMap, boolean mapBusSends,
-         boolean mapFXSends, boolean mapFader) {
+         boolean mapFXSends, boolean mapFader, boolean mapEnvelopeFollower) {
       modulesMap.put(key, new DynamicTrackModule(base, this.startIndex + trackOffset, key, midiChannel, bussesToMap,
-            mapBusSends, mapFXSends, mapFader, groupTrackBank.getItemAt(startIndex + trackOffset)));
+            mapBusSends, mapFXSends, mapFader, groupTrackBank.getItemAt(startIndex + trackOffset),
+            mapEnvelopeFollower));
 
    }
 
