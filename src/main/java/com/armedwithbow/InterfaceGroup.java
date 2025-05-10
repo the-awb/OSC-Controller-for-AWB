@@ -1,11 +1,6 @@
 package com.armedwithbow;
 
 import com.bitwig.extension.controller.api.TrackBank;
-import com.bitwig.extension.controller.api.BooleanValue;
-import com.bitwig.extension.controller.api.CursorTrack;
-import com.bitwig.extension.controller.api.HardwareSlider;
-import com.bitwig.extension.api.util.midi.ShortMidiMessage;
-import java.lang.System;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,24 +59,6 @@ public class InterfaceGroup {
 
          mod.createBusFaderMappings(base);
       }
-   }
-
-   // /** {@inheritDoc} */
-   // @Override
-   public boolean handleMidi(final ShortMidiMessage message) {
-      if (message.isNoteOn()) {
-         switch (message.getData1()) {
-            case 0x0A:
-               this.groupTrackBank.scrollPageBackwards();
-               return true;
-            case 0x0B:
-               this.groupTrackBank.scrollPageForwards();
-               return true;
-            default:
-               return false;
-         }
-      } else
-         return false;
    }
 
 }

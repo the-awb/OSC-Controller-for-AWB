@@ -56,7 +56,6 @@ public class DynamicTrackModule {
 
    DynamicTrackModule(ExtensionBase base, int index, String name, int channel, int[] busses, Boolean mapBussesSends,
          Boolean mapFxSends, Boolean mapFader, Track track, Boolean mapBusEnvelopeFollowers) {
-      // this.isEffectTrack = isEffectTrack;
       this.index = index;
       this.name = name;
       this.midiChannel = channel;
@@ -66,7 +65,6 @@ public class DynamicTrackModule {
       this.deviceModMappers = new DeviceControlMapper[3];
       this.deviceRoutingMappers = new DeviceControlMapper[1];
       this.track = track;
-      // this.mapBusEnvelopeFollowers = mapBusEnvelopeFollowers;
       if (mapBusEnvelopeFollowers) {
          envFollowerOscObservers = new EnvFollowerOscObserver[busses.length];
          createBusEnvelopeObservers(base);
@@ -225,10 +223,8 @@ public class DynamicTrackModule {
    }
 
    public void setupSends(ExtensionBase base, boolean mapBussesSends, boolean mapFxSends) {
-      // if(mapBusses || mapFx) {
+
       sends = track.sendBank();
-      // base.host.println("track sends: " + String.valueOf(sends.getSizeOfBank()));
-      // }
 
       // map bus sends
       if (mapBussesSends) {

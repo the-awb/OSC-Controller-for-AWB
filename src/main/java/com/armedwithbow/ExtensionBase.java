@@ -12,7 +12,6 @@ import java.util.Map;
 
 import com.bitwig.extension.api.opensoundcontrol.OscConnection;
 import com.bitwig.extension.api.opensoundcontrol.OscModule;
-import com.bitwig.extension.callback.ShortMidiDataReceivedCallback;
 
 public class ExtensionBase {
    public Map<String, Double> pendingOscMessages = new HashMap<>();
@@ -88,6 +87,7 @@ public class ExtensionBase {
 
    }
 
+   // uses OSC bundling on flush() rather than sending messages individually
    void sendOscMessage(String address, Object value) {
       // Just queue the message - it will be sent in the next flush cycle
       if (value instanceof Double) {
@@ -101,14 +101,14 @@ public class ExtensionBase {
       // Could handle other types as needed
    }
 
+   // to just send an OSC message - needed the try / catch exception loop
+
    // void sendOscMessage(String address, Object value) {
    // try {
    // this.oscConnection.startBundle();
    // this.oscConnection.sendMessage(address, value);
    // this.oscConnection.endBundle();
    // this.host.println(String.format("%s --> %f", address, value));
-   // this.host.println("OSC connection initialized to SuperCollider at
-   // 127.0.0.1:9000");
    // } catch (IOException e) {
    // this.host.println("ERROR: Failed to send OSC message: " + e.getMessage());
 
